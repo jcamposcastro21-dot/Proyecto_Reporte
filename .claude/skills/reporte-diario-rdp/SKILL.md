@@ -62,6 +62,20 @@ Tiene un selector **Planta completa / cada NAT**:
 
 El diseño usa `ref/estilos_base.css` y `ref/estilos_reporte.css`. El HTML es un solo archivo autocontenido e imprimible.
 
+## Informe de gestión (conversación con cada NAT)
+
+Si el usuario pide el informe para conversar con los NAT, las buenas prácticas, el aprendizaje o el seguimiento de mejoras, genera además (o en lugar del diario):
+```
+python3 -m reporte.gestion --planta "Nueva Aldea" --fecha AAAA-MM-DD --json [--comentarios comentarios/<fecha>_<planta>.json]
+```
+Sale `out/RdP_gestion_<planta>_<fecha>.html` (+ `.json`). Es el mismo reporte con estos cambios: guía de conversación 1 a 1 (qué hacemos bien → qué mejorar → qué casos lo muestran → qué compartir → qué haremos diferente y cuándo se revisa), tabla en tres niveles con «x de n» y lectura en el tiempo (en vez de las tarjetas KPI del NAT), mapa de conversación por NAT (en vez del detalle numérico, que queda plegado), casos de referencia, cadenas de recurrencia y ejecución vs. eficacia. Reglas en `references/reglas_calidad.md` § Informe de gestión.
+
+Al revisarlo:
+- **Buenas prácticas**: son candidatas por reglas. Confirma que la acción realmente cambia un control antes de presentarla; marca en `config/buenas_practicas.json` las validadas o descartadas.
+- **Acuerdos**: cuando el usuario cuente qué se acordó con un NAT, regístralo en `config/acuerdos_nat.json` (aspecto, fecha, revisar_el). Desde ahí el informe compara antes y después.
+- **Redacción**: la clave `conversacion` del JSON de comentarios (`bien`, `mejorar`, `revisar` como listas; `practica`, `acuerdo` como texto) reemplaza la guía automática. Redacta en tono de mejora («fortaleza en X, oportunidad en Y, estas dos RdP lo muestran»), nunca como ranking ni como error del NAT.
+- Con pocos casos, habla de casos, no de porcentajes. No afirmes eficacia: como máximo «sin repetición observada en N días».
+
 ## Si el usuario pide cambios de formato o reglas
 
 - Las reglas están en `reporte/calidad.py`.

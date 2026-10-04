@@ -1,0 +1,4 @@
+{
+ "_nota": "Biblioteca de casos de referencia. Las buenas prácticas las detecta el informe por reglas como 'candidatas'; aquí se registra la revisión con el NAT. Clave = Id de la RdP. estado: validada | compartida | descartada. nota: qué se valida o dónde se compartió. Ejemplo: {\"2116\": {\"estado\": \"validada\", \"nota\": \"Prueba funcional en check list de partidores suaves; compartir con Mantención de Licor y Fibra.\"}}",
+ "casos": {}
+}

@@ -1,0 +1,4 @@
+{
+ "_nota": "Acuerdos tomados en la conversación 1 a 1 con cada NAT. El informe de gestión muestra la evolución del aspecto desde la fecha del acuerdo (antes vs. después). aspecto: tit | causa | sist | verif | control | extiende | recur. Ejemplo: {\"planta\": \"Nueva Aldea\", \"nat\": \"Madera\", \"fecha\": \"2026-10-05\", \"aspecto\": \"sist\", \"acuerdo\": \"Cada RdP incluye al menos una acción que cambie plan, estándar, diseño o lógica, o justifica por qué no aplica.\", \"revisar_el\": \"2026-11-04\"}",
+ "acuerdos": []
+}

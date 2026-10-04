@@ -103,3 +103,51 @@ Los casos clasificados (confirmada, probable o posible) se siguen en `config/cas
 
 - **Autocierre**: la persona que cierra la acción es su responsable. En acciones de recurrencias y eventos críticos se pide cierre por un tercero y verificación a 60-90 días con un criterio medible.
 - Una acción `R` cerrada debe **registrar su resultado**.
+
+## Informe de gestión (`reporte/gestion.py`, `reporte/aprendizaje.py`)
+
+Versión del mismo reporte para conversar con cada NAT. Los cálculos de arriba no cambian; se agregan estas reglas.
+
+### Tres niveles y sus aspectos
+
+Cada aspecto se evalúa por RdP (sí / no / no aplica) y se informa siempre como «x de n».
+
+| Nivel | Aspecto (clave) | Cumple si | Base |
+|---|---|---|---|
+| 1 Levantamiento | `tit` | pauta de identificación ≥ 2 | todas las RdP |
+| 2 Resolución | `causa` | pauta causal ≥ 2 | RdP con acciones |
+| 2 Resolución | `sist` | al menos una acción S | RdP con acciones |
+| 2 Resolución | `verif` | alguna acción define verificación o seguimiento | RdP con acciones |
+| 3 Aprendizaje | `control` | una acción S en una fila cuya causa es `control` | RdP con acciones |
+| 3 Aprendizaje | `extiende` | una acción S habla de equipos similares, o la misma acción S se repite en ≥2 equipos (mismas 4 primeras palabras) | RdP con acciones |
+| 3 Aprendizaje | `recur` | la RdP tiene antecedentes y tiene acción S o usa 5 porqués / árbol / Ishikawa | RdP con antecedentes |
+
+### Tamaño de muestra y lectura en el tiempo
+
+- Formato: «50% — 2 de 4». Con n < 5 la celda va en gris, sin semáforo.
+- Se comparan los últimos 30 días con los 90 anteriores. Con < 3 RdP en ambos períodos no se lee tendencia; si en 120 días hay ≥ 3, se lee el período completo («pocos casos»).
+- Lecturas: **persistente** (< 50% en ambos), **mejora** (sube ≥ 25 puntos o cruza el 50% hacia arriba), **deterioro** (cruza el 50% hacia abajo con ≥ 3 RdP que no cumplen), **puntual** (cruza hacia abajo con 1–2 casos), **fortaleza sostenida** (≥ 50% en ambos), **trabajada** (hay un acuerdo en `config/acuerdos_nat.json`: compara antes y después de la fecha del acuerdo).
+
+### Ejecución vs. eficacia
+
+- Cerrada = ejecutada. La base no tiene un campo de eficacia.
+- **Evento relacionado posterior**: mismo NAT, tag común o ≥ 2 palabras clave en título y causas, con fecha posterior al cierre.
+- Por RdP (acciones S): abierta → no evaluable; cerrada hace < 60 días → «aún pronto»; cerrada ≥ 60 días sin evento relacionado → **indicio** de eficacia (no prueba); con evento relacionado posterior → «confirmar si es el mismo problema».
+- Por acción: igual, desde su propia fecha de cierre. Una revisión (R) cerrada no tiene eficacia propia.
+
+### Nivel de aprendizaje de una RdP
+
+- 0 sin acciones · 1 reparación (sin acción S) · 2 aprendizaje local (acción S) · 3 transferible (acción S sobre el control **y** extensión, verificación definida o indicio de eficacia).
+- Si hubo un evento relacionado después del cierre, el nivel 3 baja a 2.
+
+### Buenas prácticas (casos de referencia)
+
+Últimos 180 días, con al menos una acción S. Puntaje: control modificado +3, extensión +2 (+1 si la causa explica el mecanismo), problema repetido abordado distinto +2, verificación definida +1, indicio de eficacia +1. Se muestran con puntaje ≥ 3. Se excluyen las que tuvieron un evento relacionado tras el cierre y las que forman parte de una recurrencia confirmada o probable en seguimiento (salvo que se validen). «Dónde replicar»: RdP de otros NAT (12 meses) con tag o ≥ 2 palabras específicas en común (se ignoran palabras genéricas como estrategia, procedimiento, falta), o, si no hay, con la misma familia de causa raíz y sin acción S. Estado en `config/buenas_practicas.json`: candidata (por defecto), validada, compartida o descartada.
+
+### Cadenas de recurrencia
+
+Para cada caso en seguimiento y cada posible recurrencia nueva: una fila por RdP con causa registrada, qué se hizo y qué pasó antes del siguiente evento (acciones S ya cerradas, acciones aún abiertas o sin cambio de control). Lectura de la cadena, en orden: se cerró una S y volvió → «no atacó la causa o no alcanzó»; volvió con acciones abiertas → «faltó control interino»; ninguna S → «se repara y se repite»; si no → «falta confirmar que se sostiene».
+
+### Guía de conversación del NAT
+
+Base: 120 días. 1) Qué hacemos bien: el mejor caso de referencia del NAT y el aspecto más fuerte con evidencia. 2) Qué mejorar: los dos aspectos débiles prioritarios (persistente > deterioro > débil > mejora aún baja; a igual lectura, `sist`, `causa`, `recur`, `control`, `verif`, `tit`, `extiende`). 3) Casos: un ejemplo de cada oportunidad, un caso de recurrencia y el buen ejemplo. 4) Práctica para compartir, si existe. 5) Acuerdo propuesto para el aspecto prioritario, con fecha de revisión a 30 días. Todo se puede reemplazar con la clave `conversacion` en `comentarios/`.
