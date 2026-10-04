@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "ai-skills": {
+      "source": { "source": "github", "repo": "sanjay3290/ai-skills" }
+    }
+  },
+  "enabledPlugins": {
+    "ai-skills@ai-skills": true
+  }
+}
