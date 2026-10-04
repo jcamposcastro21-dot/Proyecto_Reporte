@@ -1,0 +1,5 @@
+pandas>=2.0
+openpyxl>=3.1
+# Opcionales, para conectar la fuente real:
+# pyqvd        # leer QVD de Qlik
+# sqlalchemy   # leer la base de origen de los QVD

@@ -1,0 +1,22 @@
+/* Complementos sobre estilos_base.css: semáforos, bloques y tarjetas del reporte RdP */
+.pill{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11.5px;font-weight:700}
+.pill.ok{background:var(--okBg);color:var(--ok)}.pill.amb{background:var(--ambarBg);color:var(--ambar)}.pill.red{background:var(--rojoBg);color:var(--rojo)}.pill.gray{background:#F0EFEC;color:var(--grisC)}
+td small{color:var(--grisC);font-size:10.5px;margin-left:4px}
+.kpi-value.red{color:var(--rojo)}.kpi-value.amb{color:var(--ambar)}
+.bar-row{cursor:default}.bar-track.stk{display:flex;height:14px;overflow:hidden}.bar-track.stk i{display:block;height:100%}
+.blk{padding:16px 18px}.blk h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.blk ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.55}.blk li{margin-bottom:9px}
+.b-ok{border-left:5px solid var(--ok)}.b-ok h3{color:var(--ok)}
+.b-red{border-left:5px solid var(--rojo)}.b-red h3{color:var(--rojo)}
+.b-nar{border-left:5px solid var(--naranja)}.b-nar h3{color:var(--naranja)}
+.b-az{border-left:5px solid var(--azul)}.b-az h3{color:var(--azul)}
+.logro{padding:18px 20px;border-left:5px solid var(--verde);font-size:14px}
+.logro i{display:block;margin-top:8px;font-size:11.5px;color:var(--grisC)}
+code{background:var(--bg2);border:1px solid var(--linea);border-radius:4px;padding:0 4px;font-size:11.5px;font-family:inherit;font-weight:600}
+@media(max-width:900px){.two-col,.two-col.even{grid-template-columns:1fr}}
+@media print{.filterbar{display:none}header{box-shadow:none}.card{box-shadow:none;break-inside:avoid}}
+.chip.ok{background:var(--okBg);color:var(--ok)}.chip.amb{background:var(--ambarBg);color:var(--ambar)}.chip.red{background:var(--rojoBg);color:var(--rojo)}.chip.az{background:var(--azulBg);color:var(--azul)}
+.ev-tit{font-weight:600}.ev-meta{font-size:11px;color:var(--grisC)}
+.chk{margin:4px 0 0;padding:0;list-style:none;font-size:11.5px}.chk li{margin:2px 0}
+.vista{display:none}.vista.on{display:block}
+.vacio{padding:14px 16px;font-size:12.5px;color:var(--grisC);font-style:italic}

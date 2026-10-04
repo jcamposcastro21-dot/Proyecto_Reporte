@@ -1,0 +1,12 @@
+{
+  "Planta": {
+    "lectura": "Texto breve (2-3 líneas) con la lectura del día para la planta. Citar IDs de evento.",
+    "focos": [
+      "<b>Foco 1</b>: hecho con ID de evento → qué exigir en la reunión RdP.",
+      "<b>Foco 2</b>: ..."
+    ]
+  },
+  "Máquina": {
+    "focos": ["<b>Posible recurrencia en <code>11702</code></b>: ..."]
+  }
+}

@@ -1,0 +1,8 @@
+# Datos con nombres de personas y documentos internos: no subir (el repo es público)
+data/
+ref/*.pdf
+out/
+comentarios/*.json
+!comentarios/ejemplo.json
+__pycache__/
+*.pyc
