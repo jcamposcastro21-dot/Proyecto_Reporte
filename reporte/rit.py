@@ -86,13 +86,15 @@ def cargar(ruta, planta):
     d = d[d.Planta == planta].copy()
     d['Fecha'] = pd.to_datetime(d.Fecha)
     d['Creado'] = pd.to_datetime(d.Creado)
+    d['sin_fecha'] = d.Fecha.isna()  # sin fecha del RIT: se usa la de registro y no cuenta como oportuno
+    d['Fecha'] = d.Fecha.fillna(d.Creado)
     d['dia'] = d.Fecha.dt.normalize()
     d['semana'] = d.dia - pd.to_timedelta(d.dia.dt.dayofweek, unit='D')
     d['Equipo'] = d.Equipo.fillna('(sin equipo)')
     d['Creado por'] = d['Creado por'].fillna('(sin creador)').map(lambda s: ' '.join(str(s).split()))
     d['compartida'] = d['Creado por'].str.lower().str.startswith('operador')
     d['retraso_h'] = (d.Creado - d.Fecha).dt.total_seconds() / 3600
-    d['oportuno'] = d.retraso_h.between(-0.5, 12)
+    d['oportuno'] = d.retraso_h.between(-0.5, 12) & ~d.sin_fecha
     d['tarea_se'] = ~d.Tarea.fillna('').str.strip().str.lower().isin(TAREAS_GENERICAS) & d.Tarea.notna()
     d['completo'] = d[['FaltaRiesgo', 'FaltaControl', 'FaltaTarea']].notna().all(axis=1)
     notas, motivos, n_h = [], [], []
@@ -136,6 +138,8 @@ def cargar_top20(ruta, planta):
 
 def esperados(especialidad, desde, hasta, cfg):
     """Días de RIT esperados por equipo entre desde y hasta (inclusive)."""
+    if cfg.get('_corte'):
+        hasta = min(pd.Timestamp(hasta), pd.Timestamp(cfg['_corte']))
     dias = pd.date_range(desde, hasta)
     if especialidad == 'Mantención':
         fer = set(pd.to_datetime(cfg.get('feriados', [])))
@@ -365,7 +369,7 @@ def datos_detalle(d4, eq_claves):
             if r[f] == 'Sí':
                 n, m = pauta_hallazgo(r[c])
                 items.append(dict(tipo=t, texto=r[c] if isinstance(r[c], str) else '', nota=n, motivo=m, sug=sugerencia(t, n)))
-        regs[int(r.ID)] = dict(f=r.Fecha.strftime('%d-%m-%Y %H:%M'), creado=r.Creado.strftime('%d-%m-%Y %H:%M'), ret=round(float(r.retraso_h), 1) if pd.notna(r.retraso_h) else None,
+        regs[int(r.ID)] = dict(f=fh(r.Fecha), creado=fh(r.Creado), ret=round(float(r.retraso_h), 1) if pd.notna(r.retraso_h) else None,
                                area=r.Area, esp=r.Especialidad, eq=r.Equipo, per=r['Creado por'], comp=bool(r.compartida), tarea=r.Tarea if isinstance(r.Tarea, str) else '',
                                tarea_se=bool(r.tarea_se), fr=r.FaltaRiesgo if isinstance(r.FaltaRiesgo, str) else '—', fc=r.FaltaControl if isinstance(r.FaltaControl, str) else '—',
                                ft=r.FaltaTarea if isinstance(r.FaltaTarea, str) else '—', tit=r['Título'] if isinstance(r['Título'], str) else '',
@@ -380,16 +384,18 @@ const D=JSON.parse(document.getElementById('datos').textContent);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const chip=(c,t)=>`<span class="chip ${c}">${esc(t)}</span>`;
 const bg=document.getElementById('modal'),box=document.getElementById('modalBox');
+const semSel=document.getElementById('semSel'),areaSel=document.getElementById('areaSel'),cont=document.getElementById('contenido');
 function abrir(h){box.innerHTML='<button class="close-x" style="float:right" onclick="cerrar()">✕</button>'+h;bg.classList.add('show');box.scrollTop=0;enlazar(box);}
 function cerrar(){bg.classList.remove('show');}
 bg.addEventListener('click',e=>{if(e.target===bg)cerrar();});document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrar();});
 function filaReg(id){const r=D.reg[id];const h=r.items.length?r.items.map(i=>chip(i.nota>=2?'ok':'red',i.tipo+' '+i.nota+'/3')).join(' '):'<span class="ev-meta">sin hallazgo</span>';
  return `<tr class="clic" data-reg="${id}"><td class="num">${r.f}</td><td>${esc(r.eq)}<div class="ev-meta">${esc(r.per)}</div></td><td>${esc(r.tarea).slice(0,90)}</td><td>${h}</td><td>${esc(r.estado)}</td></tr>`;}
-function lista(ids,titulo){const sem={};ids.forEach(i=>{const s=D.reg[i].sem;(sem[s]=sem[s]||[]).push(i);});
- abrir(`<h3>${esc(titulo)}</h3><p>${ids.length} registros en las últimas 4 semanas · clic en un registro para ver el detalle</p>`+Object.keys(sem).sort().reverse().map(s=>`<h4>Semana del ${s.split('-').reverse().join('-')}</h4><div class="scroll"><table><tr><th>Fecha RIT</th><th>Equipo / persona</th><th>Tarea revisada</th><th>Hallazgos (pauta)</th><th>Mejora</th></tr>${sem[s].map(filaReg).join('')}</table></div>`).join(''));}
+function ventana(){const v=semSel.value;if(v==='ev')return null;const lun=D.semanas[v];const d=new Date(lun+'T00:00:00');d.setDate(d.getDate()-21);return [d.toISOString().slice(0,10),lun];}
+function lista(ids,titulo){const w=ventana();const sel=w?ids.filter(i=>D.reg[i].sem>=w[0]&&D.reg[i].sem<=w[1]):ids;const sem={};sel.forEach(i=>{const s=D.reg[i].sem;(sem[s]=sem[s]||[]).push(i);});
+ abrir(`<h3>${esc(titulo)}</h3><p>${sel.length} registros ${w?'en las 4 semanas que terminan en la semana seleccionada':'en todo el período'} · clic en un registro para ver el detalle</p>`+Object.keys(sem).sort().reverse().map(s=>`<h4>Semana ${D.num[s]||''} · del ${s.split('-').reverse().join('-')}</h4><div class="scroll"><table><tr><th>Fecha RIT</th><th>Equipo / persona</th><th>Tarea revisada</th><th>Hallazgos (pauta)</th><th>Mejora</th></tr>${sem[s].map(filaReg).join('')}</table></div>`).join(''));}
 function verReg(id){const r=D.reg[id];if(!r)return;
  const it=r.items.map(i=>`<div class="card card-pad" style="margin:8px 0;box-shadow:none"><b>${esc(i.tipo)}</b> ${chip(i.nota>=2?'ok':i.nota==1?'amb':'red','pauta '+i.nota+'/3')} <span class="ev-meta">${esc(i.motivo)}</span><div class="txt">${esc(i.texto)||'—'}</div><div class="ev-meta" style="margin-top:6px"><b>Cómo mejorarlo:</b> ${esc(i.sug)}</div></div>`).join('');
- abrir(`<h3>Levantamiento ${id}</h3><p>${esc(r.area)} · ${esc(r.esp)} · ${esc(r.eq)} · ${esc(r.per)}${r.comp?' 👥 cuenta compartida':''}</p>
+ abrir(`<h3>Levantamiento ${id}</h3><p>${esc(r.area)} · ${esc(r.esp)} · ${esc(r.eq)} · ${esc(r.per)}${r.comp?' 👥 cuenta compartida':''} · Semana ${D.num[r.sem]||''}</p>
  <table class="kv"><tr><td>Fecha RIT</td><td>${r.f}</td></tr><tr><td>Registrado</td><td>${r.creado}${r.ret!==null?' ('+r.ret+' h después)':''}</td></tr>
  <tr><td>Tarea revisada</td><td>${esc(r.tarea)} ${r.tarea_se?'':chip('amb','sin tarea de SoftExpert')}</td></tr>
  <tr><td>¿Falta riesgo / control / tarea?</td><td>${esc(r.fr)} / ${esc(r.fc)} / ${esc(r.ft)}</td></tr><tr><td>Observación</td><td>${esc(r.tit)||'—'}</td></tr><tr><td>Estado mejora</td><td>${esc(r.estado)}</td></tr></table>
@@ -397,10 +403,14 @@ function verReg(id){const r=D.reg[id];if(!r)return;
 function enlazar(root){
  root.querySelectorAll('[data-eq]').forEach(x=>{if(x._b)return;x._b=1;x.addEventListener('click',e=>{e.stopPropagation();const k=x.dataset.eq;lista(D.eq[k]||[],k.replaceAll('|',' · '));});});
  root.querySelectorAll('[data-per]').forEach(x=>{if(x._b||!x.dataset.per)return;x._b=1;x.addEventListener('click',()=>lista(D.per[x.dataset.per]||[],x.dataset.per));});
- root.querySelectorAll('[data-reg]').forEach(x=>{if(x._b)return;x._b=1;x.addEventListener('click',e=>{e.stopPropagation();verReg(x.dataset.reg);});});}
-enlazar(document);
-const sel=document.getElementById('areaSel');
-sel.onchange=()=>{document.querySelectorAll('.vista').forEach(v=>v.classList.toggle('on',v.id===sel.value));window.scrollTo(0,0);};
+ root.querySelectorAll('[data-reg]').forEach(x=>{if(x._b)return;x._b=1;x.addEventListener('click',e=>{e.stopPropagation();verReg(x.dataset.reg);});});
+ root.querySelectorAll('[data-irsem]').forEach(x=>{if(x._b)return;x._b=1;x.addEventListener('click',e=>{e.stopPropagation();semSel.value=x.dataset.irsem;mostrar();});});}
+function mostrar(){const t=document.getElementById(`t-${semSel.value}-${areaSel.value}`);cont.innerHTML='';if(t)cont.appendChild(t.content.cloneNode(true));enlazar(cont);
+ try{history.replaceState(null,'','#'+semSel.value+'-'+areaSel.value);}catch(e){}window.scrollTo(0,0);}
+function paso(n){const i=semSel.selectedIndex+n;if(i>=0&&i<semSel.options.length){semSel.selectedIndex=i;mostrar();}}
+semSel.onchange=mostrar;areaSel.onchange=mostrar;
+const h=location.hash.slice(1).split('-');if(h.length===2&&document.getElementById(`t-${h[0]}-${h[1]}`)){semSel.value=h[0];areaSel.value=h[1];}
+mostrar();
 '''
 
 CSS_EXTRA = '''
@@ -415,16 +425,26 @@ ul.ej{list-style:none;padding:0}ul.ej li{padding:8px 0;border-bottom:1px solid v
 .modal{max-width:960px}.modal h4{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gris);margin:16px 0 6px}
 .modal .txt{background:var(--bg2);border:1px solid var(--linea);border-radius:8px;padding:10px 12px;font-size:13px;white-space:pre-wrap;margin-top:6px}
 .modal table.kv td:first-child{color:var(--grisC);width:200px}
+.semnav{display:flex;gap:6px;align-items:flex-end}.semnav .btn{padding:6px 10px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+.chart svg{width:100%;height:auto;display:block}.chart .ax{font-size:10px;fill:var(--grisC)}.chart .grid{stroke:var(--linea);stroke-width:1}
+.chart .meta{stroke:var(--ok);stroke-width:1.5;stroke-dasharray:4 4}.chart .linea{fill:none;stroke:var(--gris);stroke-width:2}
+.chart .pt{fill:var(--gris);stroke:var(--blanco);stroke-width:2}.chart .pt.bajo{fill:var(--blanco);stroke:var(--grisC);stroke-width:1.5}
+.chart .hit{fill:transparent;cursor:pointer}.chart .hit:hover+.pt{r:6}.chart .vlab{font-size:11px;font-weight:700;fill:var(--txt)}
+.heat td.h{text-align:center;font-size:11px;font-weight:600;padding:5px 4px;min-width:34px;border:2px solid var(--blanco)}
+.heat td.h.ok{background:var(--okBg);color:var(--ok)}.heat td.h.amb{background:var(--ambarBg);color:var(--ambar)}.heat td.h.red{background:var(--rojoBg);color:var(--rojo)}
+.heat td.h.na{background:transparent;color:var(--linea)}.heat th.sem{text-align:center;cursor:pointer;padding:6px 2px}.heat th.sem:hover{color:var(--txt)}
+.heat td.nom{white-space:nowrap;font-size:12px}.heat tr.g td.nom{font-weight:700}
 @media print{.modal-bg{display:none!important}}
 '''
 
 
-def vista(nombre, dsem, d4, eq_sem, eq4, personas, top, series, cfg, ind, ind_ant, com, area=None):
+def vista(nombre, dsem, d4, eq_sem, eq4, personas, top, series, cfg, ind, ind_ant, com, etiqueta, area=None):
     h = dsem[dsem.hallazgo]
     focos = com.get('focos') or focos_auto(eq_sem, eq4, ind, ind_ant, h)
     lectura = f'<div class="card logro" style="margin-bottom:14px">{com["lectura"]}</div>' if com.get('lectura') else ''
     k = '<div class="kpi-grid">' + ''.join([
-        kpi('Registros RIT', ind['reg'], f'{ind["personas"]} personas · {dsem.compartida.sum()} con cuenta compartida'),
+        kpi('Registros RIT', ind['reg'], f'{ind["personas"]} personas · {int(dsem.compartida.sum())} con cuenta compartida'),
         kpi('Adherencia', f'{ind["pAdh"]}%' if ind['pAdh'] is not None else 's/d', f'{ind["dias"]} de {ind["esp"]:g} días-equipo esperados' + delta(ind['pAdh'], ind_ant and ind_ant['pAdh']), colk(ind['pAdh'], 'adherencia', cfg)),
         kpi('Registro oportuno', f'{ind["pOport"]}%' if ind['pOport'] is not None else 's/d', 'registrado ≤12 h del RIT' + delta(ind['pOport'], ind_ant and ind_ant['pOport']), colk(ind['pOport'], 'oportuno', cfg)),
         kpi('Con hallazgo', f'{ind["hall"]}', f'{ind["pHall"] if ind["pHall"] is not None else "s/d"}% de los registros' + delta(ind['pHall'], ind_ant and ind_ant['pHall'])),
@@ -433,15 +453,15 @@ def vista(nombre, dsem, d4, eq_sem, eq4, personas, top, series, cfg, ind, ind_an
     ]) + '</div>'
     titulo = 'Planta' if area is None else 'Área'
     return f'''
-<div class="mega-title" style="margin-top:22px"><span class="mega-tag">{titulo}</span> {esc(nombre)} — evaluación semanal de levantamientos RIT</div>
-<div class="section-title">📌 La semana en números</div>{k}
+<div class="mega-title" style="margin-top:22px"><span class="mega-tag">{titulo}</span> {esc(nombre)} — {etiqueta}</div>
+<div class="section-title">📌 La semana en números (variación vs. semana anterior)</div>{k}
 <div class="section-title">🎯 Foco de la semana</div>{lectura}<div class="card blk b-az">{ul(focos)}
 <div class="ideas-fuerza-note">{"Redactado tras revisión" if com.get("focos") else "Generado automáticamente por reglas"}. Adherencia = hacer y registrar el RIT; calidad = que el hallazgo informado se entienda.</div></div>
-<div class="section-title">🧭 ¿Quién necesita apoyo? Adherencia × claridad por equipo (últimas 4 semanas)</div>{bloque_cuadrantes(eq4, cfg)}
+<div class="section-title">🧭 ¿Quién necesita apoyo? Adherencia × claridad por equipo (4 semanas hasta la seleccionada)</div>{bloque_cuadrantes(eq4, cfg)}
 <div class="section-title">📊 {"Detalle por área y especialidad (semana) — seleccione un área arriba para ver cada equipo" if area is None else "Detalle por especialidad y equipo (semana)"}</div>{bloque_tabla(dsem, eq_sem, series, cfg, area)}
 <div class="ev-meta" style="margin-top:6px">Días esperados: Mantención = días hábiles (lun–vie, sin feriados); Operación = {cfg["operacion_dias_por_dia"]:g} × días de la semana por turno (5 turnos, 2 por día).
-Clic en un equipo para ver sus levantamientos.</div>
-<div class="section-title">👤 Personas (últimas 4 semanas)</div>{bloque_personas(personas, top, cfg)}
+Cada equipo entra al cálculo desde su primera semana con registro. Clic en un equipo para ver sus levantamientos.</div>
+<div class="section-title">👤 Personas (4 semanas hasta la seleccionada)</div>{bloque_personas(personas, top, cfg)}
 <div class="section-title">📝 Ejemplos de la semana</div>{bloque_ejemplos(h)}
 {"" if area else f'<div class="section-title">⭐ Top 20 piloto SoftExpert — ¿se sostiene su calidad?</div>{bloque_top20(top, personas, cfg)}'}'''
 
@@ -455,16 +475,185 @@ def personas_4s(d4):
                           pClaro=round(100 * h.claro.mean()) if len(h) else None, nota=round(float(h.nota.mean()), 1) if len(h) else None,
                           areas=', '.join(sorted(set(g.Area + ' ' + g.Equipo)))[:80],
                           ejemplo=texto_hallazgo(mejor.iloc[0]) if len(h) else ''))
-    return pd.DataFrame(filas)
+    return pd.DataFrame(filas, columns=['persona', 'compartida', 'reg', 'semanas', 'hall', 'pClaro', 'nota', 'areas', 'ejemplo'])
+
+
+def fh(t):
+    return t.strftime('%d-%m-%Y %H:%M') if pd.notna(t) else '—'
+
+
+def datos_detalle(d, claves, semanas):
+    regs = {}
+    for _, r in d.iterrows():
+        items = []
+        for t, f, c in ITEMS:
+            if r[f] == 'Sí':
+                n, m = pauta_hallazgo(r[c])
+                items.append(dict(tipo=t, texto=r[c] if isinstance(r[c], str) else '', nota=n, motivo=m, sug=sugerencia(t, n)))
+        regs[int(r.ID)] = dict(f=fh(r.Fecha), creado=fh(r.Creado), ret=round(float(r.retraso_h), 1) if pd.notna(r.retraso_h) else None,
+                               area=r.Area, esp=r.Especialidad, eq=r.Equipo, per=r['Creado por'], comp=bool(r.compartida), tarea=r.Tarea if isinstance(r.Tarea, str) else '',
+                               tarea_se=bool(r.tarea_se), fr=r.FaltaRiesgo if isinstance(r.FaltaRiesgo, str) else '—', fc=r.FaltaControl if isinstance(r.FaltaControl, str) else '—',
+                               ft=r.FaltaTarea if isinstance(r.FaltaTarea, str) else '—', tit=r['Título'] if isinstance(r['Título'], str) else '',
+                               estado=r.EstadoMejora if isinstance(r.EstadoMejora, str) else '', items=items, sem=r.semana.strftime('%Y-%m-%d'))
+    clave = d.Area + '|' + d.Especialidad + '|' + d.Equipo
+    eqs = {k: [int(i) for i in d[clave == k].sort_values('Fecha', ascending=False).ID] for k in claves}
+    pers = {p: [int(i) for i in g.sort_values('Fecha', ascending=False).ID] for p, g in d.groupby('Creado por')}
+    return dict(reg=regs, eq=eqs, per=pers, semanas={f'S{n}': s.strftime('%Y-%m-%d') for n, s in semanas},
+                num={s.strftime('%Y-%m-%d'): n for n, s in semanas})
+
+
+# ================================================================ evolución
+def svg_linea(puntos, titulo, sub, umbral=None, alto=170):
+    """puntos: [(semana_num, valor|None, n_base, texto_hover)]. Una sola serie, eje 0–100%."""
+    ancho, ml, mr, mt, mb = 520, 34, 12, 14, 26
+    W, H = ancho - ml - mr, alto - mt - mb
+    n = len(puntos)
+    x = lambda i: ml + (W * i / max(1, n - 1))
+    y = lambda v: mt + H * (1 - v / 100)
+    g = ''.join(f'<line class="grid" x1="{ml}" x2="{ancho - mr}" y1="{y(v):.1f}" y2="{y(v):.1f}"/><text class="ax" x="{ml - 6}" y="{y(v) + 3:.1f}" text-anchor="end">{v}</text>'
+                for v in (0, 25, 50, 75, 100))
+    paso = max(1, n // 12)
+    g += ''.join(f'<text class="ax" x="{x(i):.1f}" y="{alto - 8}" text-anchor="middle">S{p[0]}</text>' for i, p in enumerate(puntos) if i % paso == 0 or i == n - 1)
+    if umbral is not None:
+        g += f'<line class="meta" x1="{ml}" x2="{ancho - mr}" y1="{y(umbral):.1f}" y2="{y(umbral):.1f}"/><text class="ax" x="{ancho - mr}" y="{y(umbral) - 4:.1f}" text-anchor="end">meta {umbral}%</text>'
+    tramos, actual = [], []
+    for i, p in enumerate(puntos):
+        if p[1] is None:
+            if actual:
+                tramos.append(actual)
+            actual = []
+        else:
+            actual.append(f'{x(i):.1f},{y(p[1]):.1f}')
+    if actual:
+        tramos.append(actual)
+    g += ''.join(f'<polyline class="linea" points="{" ".join(t)}"/>' for t in tramos)
+    for i, p in enumerate(puntos):
+        if p[1] is None:
+            continue
+        bajo = p[2] < 20
+        g += (f'<g data-irsem="S{p[0]}"><title>{esc(p[3])}</title><circle class="hit" cx="{x(i):.1f}" cy="{y(p[1]):.1f}" r="11"/>'
+              f'<circle class="pt{" bajo" if bajo else ""}" cx="{x(i):.1f}" cy="{y(p[1]):.1f}" r="4"/></g>')
+    ult = next((p for p in reversed(puntos) if p[1] is not None), None)
+    if ult:
+        i = puntos.index(ult)
+        g += f'<text class="vlab" x="{x(i) - 6:.1f}" y="{y(ult[1]) - 9:.1f}" text-anchor="end">{ult[1]}%</text>'
+    return (f'<div class="card card-pad chart"><h3 class="card-h">{titulo}</h3><div class="card-h-sub">{sub}</div>'
+            f'<svg viewBox="0 0 {ancho} {alto}" role="img" aria-label="{esc(titulo)} por semana">{g}</svg></div>')
+
+
+def heat_celda(v, k, cfg, sem):
+    if v is None:
+        return '<td class="h na">·</td>'
+    gv, w = cfg['umbrales'][k]
+    c = 'ok' if v >= gv else 'amb' if v >= w else 'red'
+    return f'<td class="h {c}" data-irsem="S{sem}" title="Semana {sem}: {v}%">{v}</td>'
+
+
+def vista_evolucion(nombre, area, sem_lista, serie, filas_heat, cfg, corte):
+    """serie: lista de (num, lunes, ind) del ámbito. filas_heat: [(nombre, nivel, {num: (adh, claro)})]."""
+    val = lambda k: [(n, ind[k], ind['reg'] if k != 'pClaro' else ind['hall'],
+                      f'Semana {n} ({fmt(l)}): {ind[k] if ind[k] is not None else "s/d"}% · {ind["reg"]} registros, {ind["hall"]} hallazgos') for n, l, ind in serie]
+    u = cfg['umbrales']
+    charts = ''.join([
+        svg_linea(val('pAdh'), 'Adherencia', 'Días con RIT registrado / días esperados', u['adherencia'][0]),
+        svg_linea(val('pClaro'), 'Hallazgos claros', 'Hallazgos con pauta ≥2 / hallazgos informados', u['claridad'][0]),
+        svg_linea(val('pHall'), 'Registros con hallazgo', '% de levantamientos que informan algo que falta o sobra en SoftExpert'),
+        svg_linea(val('pOport'), 'Registro oportuno', 'Registrados hasta 12 h después del RIT', u['oportuno'][0]),
+        svg_linea(val('pTarea'), 'Tarea de SoftExpert seleccionada', 'Registros con tarea de SE (no "Notificar sin SE")', u['tarea_se'][0]),
+    ])
+    completas = [(n, l, i) for n, l, i in serie if l + pd.Timedelta(days=6) <= corte]
+    ult = completas[-1] if completas else serie[-1]
+    prev4 = [i for n, l, i in completas[-5:-1]]
+    prom = lambda k: round(sum(i[k] for i in prev4 if i[k] is not None) / max(1, sum(1 for i in prev4 if i[k] is not None))) if any(i[k] is not None for i in prev4) else None
+    mejor = lambda k: max(((i[k], n) for n, l, i in completas if i[k] is not None and i['reg'] >= 20), default=(None, None))
+    def tarjeta(k, label, umbral):
+        v, p, (bv, bn) = ult[2][k], prom(k), mejor(k)
+        d = '' if v is None or p is None else f'<small class="dl {"up" if v >= p else "down"}">{"▲" if v >= p else "▼"} {abs(v - p)} pts vs. prom. 4 sem. anteriores ({p}%)</small>'
+        return kpi(f'{label} · S{ult[0]}', f'{v}%' if v is not None else 's/d', (f'mejor semana: S{bn} ({bv}%)' if bn else '') + d, colk(v, umbral, cfg) if umbral else '')
+    tarjetas = '<div class="kpi-grid">' + ''.join([
+        kpi(f'Registros · S{ult[0]}', ult[2]['reg'], f'{ult[2]["personas"]} personas · total período: {sum(i["reg"] for _, _, i in serie)}'),
+        tarjeta('pAdh', 'Adherencia', 'adherencia'), tarjeta('pClaro', 'Hallazgos claros', 'claridad'),
+        tarjeta('pHall', 'Con hallazgo', None), tarjeta('pOport', 'Registro oportuno', 'oportuno'),
+        kpi('Listas pegadas · S' + str(ult[0]), ult[2]['pegadas'], 'copiadas de SoftExpert sin acción', 'red' if ult[2]['pegadas'] else ''),
+    ]) + '</div>'
+    filas_t = ''.join(
+        f'<tr class="clic" data-irsem="S{n}"><td><b>S{n}</b> <small>{fmt(l)}–{fmt(l + pd.Timedelta(days=6))}{" (parcial)" if l + pd.Timedelta(days=6) > corte else ""}</small></td>'
+        f'<td class="num">{i["reg"]}</td><td class="num">{i["personas"]}</td><td class="num">{pill(i["pAdh"], "adherencia", cfg)}</td><td class="num">{pill(i["pOport"], "oportuno", cfg)}</td>'
+        f'<td class="num">{pill(i["pTarea"], "tarea_se", cfg)}</td><td class="num">{i["hall"]} <small>({i["pHall"] if i["pHall"] is not None else "s/d"}%)</small></td>'
+        f'<td class="num">{pill(i["pClaro"], "claridad", cfg)} <small>{i["claros"]}/{i["hall"]}</small></td><td class="num">{i["pegadas"] or "—"}</td><td class="num">{i["nota"] if i["nota"] is not None else "s/d"}</td></tr>'
+        for n, l, i in reversed(serie))
+    tabla = ('<div class="card scroll"><table><tr><th>Semana</th><th>Registros</th><th>Personas</th><th>Adherencia</th><th>Registro oportuno</th><th>Tarea SE</th>'
+             f'<th>Con hallazgo</th><th>Hallazgos claros</th><th>Listas pegadas</th><th>Pauta media</th></tr>{filas_t}</table></div>')
+    def heat(k, idx, titulo):
+        cab = ''.join(f'<th class="sem" data-irsem="S{n}" title="Ir a la semana {n}">{n}</th>' for n, _ in sem_lista)
+        cuerpo = ''.join(f'<tr class="{"g" if nivel == 0 else ""}"><td class="nom">{"&nbsp;" * 4 * nivel}{esc(nom)}</td>'
+                         + ''.join(heat_celda(vals.get(n, (None, None))[idx], k, cfg, n) for n, _ in sem_lista) + '</tr>' for nom, nivel, vals in filas_heat)
+        return (f'<div class="section-title">{titulo}</div><div class="card scroll heat"><table><tr><th>Semana →</th>{cab}</tr>{cuerpo}</table></div>')
+    titulo = 'Planta' if area is None else 'Área'
+    return f'''
+<div class="mega-title" style="margin-top:22px"><span class="mega-tag">{titulo}</span> {esc(nombre)} — evolución de los KPI RIT, semanas {sem_lista[0][0]} a {sem_lista[-1][0]}</div>
+<div class="section-title">📌 Última semana completa vs. promedio de las 4 anteriores</div>{tarjetas}
+<div class="section-title">📈 Evolución semanal</div><div class="charts">{charts}</div>
+<div class="ev-meta" style="margin-top:6px">Mismas reglas para todas las semanas. Puntos huecos = menos de 20 registros (o hallazgos, en "Hallazgos claros"): leer con cautela, sobre todo en el inicio del despliegue.
+Línea punteada = meta (verde del semáforo). Pase el cursor por un punto para ver el detalle; clic para abrir esa semana.</div>
+{heat("adherencia", 0, "🗓 Adherencia por semana (%) — clic en una semana para abrirla")}
+{heat("claridad", 1, "🗓 Hallazgos claros por semana (%) — vacío = sin hallazgos esa semana")}
+<div class="section-title">📋 Tabla semanal</div>{tabla}'''
+
+
+# ================================================================ cálculo de una semana
+def evaluar(d, lun, cfg, ctx):
+    dom = lun + pd.Timedelta(days=6)
+    ini4 = lun - pd.Timedelta(days=21)
+    dsem, dant, d4 = d[d.semana == lun], d[d.semana == lun - pd.Timedelta(days=7)], d[(d.semana >= ini4) & (d.semana <= lun)]
+    act = ctx['activos'](lun)
+    eq_sem = act.merge(tabla_equipos(dsem, lun, dom, cfg), how='left', on=['Area', 'Especialidad', 'Equipo']) if len(dsem) else act.copy()
+    for c in ('reg', 'dias', 'hall', 'claros', 'pegadas', 'n0', 'n1', 'personas'):
+        eq_sem[c] = eq_sem[c].fillna(0).astype(int) if c in eq_sem else 0
+    for c in ('pOport', 'pTarea', 'pComp', 'pHall', 'pClaro', 'nota', 'lider'):
+        if c not in eq_sem:
+            eq_sem[c] = None
+    eq_sem['esp'] = [esperados(e, lun, dom, cfg) for e in eq_sem.Especialidad]
+    eq_sem['pAdh'] = [min(100, round(100 * x / y)) if y else None for x, y in zip(eq_sem.dias, eq_sem.esp)]
+    eq_sem['lider'] = eq_sem.lider.fillna('')
+    eq_sem = eq_sem.astype(object).where(eq_sem.notna(), None)
+
+    t4 = tabla_equipos(d4, ini4, dom, cfg)
+    eq4 = act.merge(t4, how='left', on=['Area', 'Especialidad', 'Equipo']) if len(t4) else act.assign(dias=0, hall=0, pClaro=None)
+    eq4['dias'] = eq4.dias.fillna(0)
+    eq4['hall'] = eq4.hall.fillna(0).astype(int)
+    # días esperados en 4 semanas, desde la semana en que el equipo empezó a registrar
+    eq4['esp'] = [esperados(e, max(ini4, ctx['inicio'][(a, e, q)]), dom, cfg) for a, e, q in zip(eq4.Area, eq4.Especialidad, eq4.Equipo)]
+    eq4['pAdh'] = [min(100, round(100 * x / y)) if y else None for x, y in zip(eq4.dias, eq4.esp)]
+    eq4['pClaro'] = eq4.pClaro.astype(object).where(eq4.pClaro.notna(), None)
+    eq4['cuad'] = [cuadrante(x, c, h, cfg) for x, c, h in zip(eq4.pAdh, eq4.pClaro, eq4.hall)]
+    eq4['clave'] = eq4.Area + '|' + eq4.Especialidad + '|' + eq4.Equipo
+
+    semanas8 = [lun - pd.Timedelta(days=7 * i) for i in range(7, -1, -1)]
+    series = {}
+    for _, r in act.iterrows():
+        for s in semanas8:
+            if s < ctx['inicio'][(r.Area, r.Especialidad, r.Equipo)]:
+                continue
+            dias = ctx['dias'].get((r.Area, r.Especialidad, r.Equipo, s), 0)
+            esp = esperados(r.Especialidad, s, s + pd.Timedelta(days=6), cfg)
+            for clave in ((r.Area,), (r.Area, r.Especialidad), (r.Area, r.Especialidad, r.Equipo)):
+                acc = series.setdefault(clave, {}).setdefault(s, [0, 0])
+                acc[0] += dias
+                acc[1] += esp
+    series = {k: [(s, min(100, round(100 * v[s][0] / v[s][1])) if s in v and v[s][1] else None) for s in semanas8] for k, v in series.items()}
+    esp_ant = lambda df: sum(esperados(e, lun - pd.Timedelta(days=7), lun - pd.Timedelta(days=1), cfg) for e in df.Especialidad)
+    act_ant = ctx['activos'](lun - pd.Timedelta(days=7))
+    return dict(lun=lun, dom=dom, dsem=dsem, dant=dant, d4=d4, eq_sem=eq_sem, eq4=eq4, series=series, act=act, act_ant=act_ant, esp_ant=esp_ant)
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(description='Reporte semanal de calidad de levantamientos RIT')
+    p = argparse.ArgumentParser(description='Reporte semanal de calidad de levantamientos RIT (todas las semanas + evolución)')
     p.add_argument('--planta', default='Nueva Aldea')
-    p.add_argument('--semana', default=None, help='Cualquier día de la semana a evaluar (AAAA-MM-DD); por defecto, la última semana completa')
+    p.add_argument('--semana', default=None, help='Semana que se abre por defecto: número ISO (39) o un día (AAAA-MM-DD); por defecto, la última completa')
     p.add_argument('--excel', default=None)
     p.add_argument('--top20', default=None)
-    p.add_argument('--comentarios', default=None)
+    p.add_argument('--comentarios', default=None, help='JSON {"S39": {"Planta": {...}, "<Área>": {...}}}')
     p.add_argument('--json', action='store_true')
     p.add_argument('--salida', default='out')
     a = p.parse_args(argv)
@@ -474,98 +663,123 @@ def main(argv=None):
     top_ruta = a.top20 or next(iter(sorted(Path('data').glob('Top_usuarios*.html'))), None)
     d = cargar(ruta, a.planta)
     top = cargar_top20(top_ruta, a.planta)
+    corte = d.dia.max()
+    cfg['_corte'] = str(corte.date())
+
+    lunes = list(pd.date_range(d.semana.min(), d.semana.max(), freq='7D'))
+    sem_lista = [(int(l.isocalendar().week), l) for l in lunes]
+    num = {l: n for n, l in sem_lista}
+    completas = [l for l in lunes if l + pd.Timedelta(days=6) <= corte]
     if a.semana:
-        lun = pd.Timestamp(a.semana).normalize()
-        lun -= pd.Timedelta(days=lun.dayofweek)
+        if a.semana.isdigit():
+            defecto = next(l for n, l in sem_lista if n == int(a.semana))
+        else:
+            x = pd.Timestamp(a.semana).normalize()
+            defecto = x - pd.Timedelta(days=x.dayofweek)
     else:
-        ult = d.dia.max()
-        lun = ult - pd.Timedelta(days=ult.dayofweek) - (pd.Timedelta(days=7) if ult.dayofweek < 6 else pd.Timedelta(0))
-    dom = lun + pd.Timedelta(days=6)
-    ini4 = lun - pd.Timedelta(days=21)
-    dsem, dant, d4 = d[d.semana == lun], d[d.semana == lun - pd.Timedelta(days=7)], d[(d.semana >= ini4) & (d.semana <= lun)]
+        defecto = completas[-1] if completas else lunes[-1]
 
-    eq_sem = tabla_equipos(dsem.assign(), lun, dom, cfg)
-    # equipos activos en las últimas 8 semanas, aunque no hayan registrado esta semana (adherencia 0)
-    d8 = d[(d.semana > lun - pd.Timedelta(days=56)) & (d.semana <= lun)]
-    activos = d8[['Area', 'Especialidad', 'Equipo']].drop_duplicates()
-    eq_sem = activos.merge(eq_sem, how='left', on=['Area', 'Especialidad', 'Equipo'])
-    for c in ('reg', 'dias', 'hall', 'claros', 'pegadas', 'n0', 'n1', 'personas'):
-        eq_sem[c] = eq_sem[c].fillna(0).astype(int)
-    eq_sem['esp'] = [esperados(e, lun, dom, cfg) for e in eq_sem.Especialidad]
-    eq_sem['pAdh'] = [min(100, round(100 * x / y)) if y else None for x, y in zip(eq_sem.dias, eq_sem.esp)]
-    eq_sem['lider'] = eq_sem.lider.fillna('')
-    eq_sem = eq_sem.astype(object).where(eq_sem.notna(), None)
-
-    eq4 = activos.merge(tabla_equipos(d4, ini4, dom, cfg), how='left', on=['Area', 'Especialidad', 'Equipo'])
-    eq4['dias'] = eq4.dias.fillna(0)
-    eq4['hall'] = eq4.hall.fillna(0).astype(int)
-    eq4['esp'] = [esperados(e, ini4, dom, cfg) for e in eq4.Especialidad]
-    eq4['pAdh'] = [min(100, round(100 * x / y)) if y else None for x, y in zip(eq4.dias, eq4.esp)]
-    eq4['pClaro'] = eq4.pClaro.astype(object).where(eq4.pClaro.notna(), None)
-    eq4['cuad'] = [cuadrante(x, c, h, cfg) for x, c, h in zip(eq4.pAdh, eq4.pClaro, eq4.hall)]
-    eq4['clave'] = eq4.Area + '|' + eq4.Especialidad + '|' + eq4.Equipo
-
-    # series de adherencia 8 semanas (equipo, especialidad, área)
-    series = {}
-    semanas = [lun - pd.Timedelta(days=7 * i) for i in range(7, -1, -1)]
-    for s in semanas:
-        ds = d[d.semana == s]
-        fin = s + pd.Timedelta(days=6)
-        for _, r in activos.iterrows():
-            g = ds[(ds.Area == r.Area) & (ds.Especialidad == r.Especialidad) & (ds.Equipo == r.Equipo)]
-            esp = esperados(r.Especialidad, s, fin, cfg)
-            for clave in ((r.Area,), (r.Area, r.Especialidad), (r.Area, r.Especialidad, r.Equipo)):
-                acc = series.setdefault(clave, {}).setdefault(s, [0, 0])
-                acc[0] += g.dia.nunique()
-                acc[1] += esp
-    series = {k: [(s, min(100, round(100 * v[s][0] / v[s][1])) if v[s][1] else None) for s in semanas] for k, v in series.items()}
-
+    equipos = d.groupby(['Area', 'Especialidad', 'Equipo']).semana.min()
+    inicio = {k: v for k, v in equipos.items()}
+    ctx = dict(inicio=inicio, dias=d.groupby(['Area', 'Especialidad', 'Equipo', 'semana']).dia.nunique().to_dict(),
+               activos=lambda lun: pd.DataFrame([k for k, v in inicio.items() if v <= lun], columns=['Area', 'Especialidad', 'Equipo']))
+    areas = sorted(d.Area.unique())
     comentarios = json.loads(Path(a.comentarios).read_text(encoding='utf-8')) if a.comentarios else {}
-    personas = personas_4s(d4)
-    areas = sorted(activos.Area.unique())
-    ind = indicadores(dsem, eq_sem.esp.sum())
-    ind_ant = indicadores(dant, sum(esperados(e, lun - pd.Timedelta(days=7), lun - pd.Timedelta(days=1), cfg) for e in activos.Especialidad))
-    vistas = [vista(a.planta, dsem, d4, eq_sem, eq4, personas, top, series, cfg, ind, ind_ant, comentarios.get('Planta', {}))]
-    for ar in areas:
-        ea = eq_sem[eq_sem.Area == ar]
-        ia = indicadores(dsem[dsem.Area == ar], ea.esp.sum())
-        ia_ant = indicadores(dant[dant.Area == ar], sum(esperados(e, lun - pd.Timedelta(days=7), lun - pd.Timedelta(days=1), cfg) for e in activos[activos.Area == ar].Especialidad))
-        vistas.append(vista(ar, dsem[dsem.Area == ar], d4[d4.Area == ar], ea, eq4[eq4.Area == ar], personas_4s(d4[d4.Area == ar]), top, series, cfg, ia, ia_ant,
-                            comentarios.get(ar, {}), area=ar))
+
+    plantillas, resumen, evol = [], {}, {None: [], **{ar: [] for ar in areas}}
+    heat_vals = {}
+    for n, lun in sem_lista:
+        e = evaluar(d, lun, cfg, ctx)
+        parcial = e['dom'] > corte
+        etiqueta = f'Semana {n} · {fmt(lun)} a {e["dom"]:%d-%m-%Y}' + (f' (parcial, datos hasta {fmt(corte)})' if parcial else '')
+        com = comentarios.get(f'S{n}', {})
+        ind = indicadores(e['dsem'], e['eq_sem'].esp.sum())
+        ind_ant = indicadores(e['dant'], e['esp_ant'](e['act_ant'])) if len(e['act_ant']) else None
+        evol[None].append((n, lun, ind))
+        plantillas.append((f'S{n}', 'p', vista(a.planta, e['dsem'], e['d4'], e['eq_sem'], e['eq4'], personas_4s(e['d4']), top, e['series'], cfg, ind, ind_ant,
+                                               com.get('Planta', {}), etiqueta)))
+        for i, ar in enumerate(areas):
+            ea = e['eq_sem'][e['eq_sem'].Area == ar]
+            ia = indicadores(e['dsem'][e['dsem'].Area == ar], ea.esp.sum())
+            aa = e['act_ant'][e['act_ant'].Area == ar] if len(e['act_ant']) else e['act_ant']
+            ia_ant = indicadores(e['dant'][e['dant'].Area == ar], e['esp_ant'](aa)) if len(aa) else None
+            evol[ar].append((n, lun, ia))
+            plantillas.append((f'S{n}', f'a{i}', vista(ar, e['dsem'][e['dsem'].Area == ar], e['d4'][e['d4'].Area == ar], ea, e['eq4'][e['eq4'].Area == ar],
+                                                      personas_4s(e['d4'][e['d4'].Area == ar]), top, e['series'], cfg, ia, ia_ant, com.get(ar, {}), etiqueta, area=ar)))
+        # valores para los mapas de calor (área, especialidad, equipo)
+        for ar in areas:
+            ea = e['eq_sem'][e['eq_sem'].Area == ar]
+            if not len(ea):
+                continue
+            da = e['dsem'][e['dsem'].Area == ar]
+            heat_vals.setdefault((ar,), {})[n] = (indicadores(da, ea.esp.sum())['pAdh'], indicadores(da, ea.esp.sum())['pClaro'])
+            for es in ('Operación', 'Mantención'):
+                ee = ea[ea.Especialidad == es]
+                if len(ee):
+                    ii = indicadores(da[da.Especialidad == es], ee.esp.sum())
+                    heat_vals.setdefault((ar, es), {})[n] = (ii['pAdh'], ii['pClaro'])
+                for _, r in ee.iterrows():
+                    heat_vals.setdefault((ar, es, r.Equipo), {})[n] = (r.pAdh, int(r.pClaro) if r.pClaro is not None else None)
+        if lun == defecto:
+            resumen = dict(semana=n, rango=[str(lun.date()), str(e['dom'].date())], planta=ind, semana_anterior=ind_ant,
+                           equipos=e['eq_sem'].drop(columns=['lider']).to_dict('records'),
+                           cuadrantes={k: [f'{r.Area} · {r.Equipo}' for _, r in e['eq4'][e['eq4'].cuad == k].iterrows()] for k in CUAD},
+                           personas_4s=personas_4s(e['d4']).to_dict('records'),
+                           hallazgos_semana=[dict(ID=int(r.ID), area=r.Area, equipo=r.Equipo, persona=r['Creado por'], texto=texto_hallazgo(r), pauta=int(r.nota), motivo=r.motivo)
+                                             for _, r in e['dsem'][e['dsem'].hallazgo].iterrows()],
+                           focos_automaticos=focos_auto(e['eq_sem'], e['eq4'], ind, ind_ant, e['dsem'][e['dsem'].hallazgo]))
+
+    def filas_heat(area=None):
+        out = []
+        for ar in ([area] if area else areas):
+            out.append((ar, 0, heat_vals.get((ar,), {})))
+            for es in ('Operación', 'Mantención'):
+                if (ar, es) in heat_vals:
+                    out.append((es, 1, heat_vals[(ar, es)]))
+                    if area:
+                        for k in sorted(x for x in heat_vals if len(x) == 3 and x[0] == ar and x[1] == es):
+                            out.append((k[2], 2, heat_vals[k]))
+        return out
+    plantillas.append(('ev', 'p', vista_evolucion(a.planta, None, sem_lista, evol[None], filas_heat(), cfg, corte)))
+    for i, ar in enumerate(areas):
+        plantillas.append(('ev', f'a{i}', vista_evolucion(ar, ar, sem_lista, evol[ar], filas_heat(ar), cfg, corte)))
 
     css = Path('ref/estilos_base.css').read_text() + Path('ref/estilos_reporte.css').read_text() + CSS_EXTRA
-    opts = ''.join(f'<option value="v{i}">{esc(n)}</option>' for i, n in enumerate(['Planta completa'] + areas))
-    datos = json.dumps(datos_detalle(d4, set(eq4.clave)), ensure_ascii=False, default=str).replace('</', '<\\/')
-    cuerpo = ''.join(f'<div class="vista{" on" if i == 0 else ""}" id="v{i}">{h}</div>' for i, h in enumerate(vistas))
+    opt_sem = '<option value="ev">📈 Evolución global (todas las semanas)</option>' + ''.join(
+        f'<option value="S{n}"{" selected" if l == defecto else ""}>Semana {n} · {fmt(l)} a {fmt(l + pd.Timedelta(days=6))}{" (parcial)" if l + pd.Timedelta(days=6) > corte else ""}</option>'
+        for n, l in reversed(sem_lista))
+    opt_area = '<option value="p">Planta completa</option>' + ''.join(f'<option value="a{i}">{esc(ar)}</option>' for i, ar in enumerate(areas))
+    claves = set(d.Area + '|' + d.Especialidad + '|' + d.Equipo)
+    datos = json.dumps(datos_detalle(d, claves, sem_lista), ensure_ascii=False, default=str).replace('</', '<\\/')
+    tpls = ''.join(f'<template id="t-{s}-{v}">{h}</template>' for s, v, h in plantillas)
     pag = f'''<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RIT semanal {esc(a.planta)} {lun:%d-%m-%Y}</title><style>{css}</style></head><body>
+<title>RIT semanal {esc(a.planta)}</title><style>{css}</style></head><body>
 <header><div class="hd"><div class="hd-left"><div><h1>Calidad de levantamientos RIT</h1>
 <div class="sub">Reunión de Inicio de Turno · revisión de riesgos y controles en SoftExpert — adherencia y calidad de los hallazgos</div><div class="plt">Negocio Celulosa — Planta {esc(a.planta)}</div></div></div>
-<div class="hd-right"><div class="hd-meta">Semana <b>{lun:%d-%m} a {dom:%d-%m-%Y}</b><br>Comparación con la semana anterior · cuadrantes y personas: 4 semanas<br>Fuente: {esc(ruta.name)}</div></div></div></header>
-<div class="filterbar"><div class="filterbar-in"><div class="f"><label>Área</label><select id="areaSel">{opts}</select></div>
-<div class="f"><label>Detalle</label><div style="font-size:12.5px;padding:7px 0">Clic en un equipo, una persona o un ejemplo</div></div>
+<div class="hd-right"><div class="hd-meta">Semanas {sem_lista[0][0]} a {sem_lista[-1][0]} (numeración ISO, lunes a domingo)<br>Datos hasta el <b>{corte:%d-%m-%Y}</b><br>Fuente: {esc(ruta.name)}</div></div></div></header>
+<div class="filterbar"><div class="filterbar-in"><div class="f"><label>Semana</label><div class="semnav"><button class="btn" onclick="paso(1)" title="Semana anterior">◀</button>
+<select id="semSel">{opt_sem}</select><button class="btn" onclick="paso(-1)" title="Semana siguiente">▶</button></div></div>
+<div class="f"><label>Área</label><select id="areaSel">{opt_area}</select></div>
+<div class="f"><label>Detalle</label><div style="font-size:12.5px;padding:7px 0">Clic en un equipo, una persona, un ejemplo o una semana</div></div>
 <button class="btn" onclick="window.print()" style="margin-left:auto">🖨 Imprimir / PDF</button></div></div>
-<div class="wrap">{cuerpo}
+<div class="wrap"><div id="contenido"></div>
 <div class="foot-note">Propósito del RIT (ficha de instancia): asegurar que el equipo inicie el turno alineado, con tareas claras y riesgos controlados; el producto esperado es el registro del análisis de riesgo en SoftExpert,
 identificando actualización de documentos, cambios en riesgos o en procesos. Playbook MGO: los riesgos se revisan en el día a día durante el inicio de turno.
-Pauta de hallazgos 0–3 automática por reglas de texto; los casos dudosos se revisan en el detalle.</div></div>
+Pauta de hallazgos 0–3 automática por reglas de texto, igual para todas las semanas; los casos dudosos se revisan en el detalle.</div></div>
+{tpls}
 <div class="modal-bg" id="modal"><div class="card modal" id="modalBox"></div></div>
 <script type="application/json" id="datos">{datos}</script><script>{JS}</script></body></html>'''
     out = Path(a.salida)
     out.mkdir(exist_ok=True)
-    f = out / f'RIT_semanal_{a.planta.replace(" ", "_")}_{lun:%Y-%m-%d}.html'
+    f = out / f'RIT_semanal_{a.planta.replace(" ", "_")}.html'
     f.write_text(pag, encoding='utf-8')
-    print(f)
+    print(f, f'({len(pag) // 1024} KB, semanas {sem_lista[0][0]}–{sem_lista[-1][0]})')
     if a.json:
-        res = dict(semana=[str(lun.date()), str(dom.date())], planta=ind, semana_anterior=ind_ant,
-                   equipos=eq_sem.drop(columns=[c for c in eq_sem.columns if c in ('lider',)]).to_dict('records'),
-                   cuadrantes={k: [f'{r.Area} · {r.Equipo}' for _, r in eq4[eq4.cuad == k].iterrows()] for k in CUAD},
-                   personas_4s=personas.to_dict('records'),
-                   hallazgos_semana=[dict(ID=int(r.ID), area=r.Area, equipo=r.Equipo, persona=r['Creado por'], texto=texto_hallazgo(r), pauta=int(r.nota), motivo=r.motivo)
-                                     for _, r in dsem[dsem.hallazgo].iterrows()],
-                   focos_automaticos=focos_auto(eq_sem, eq4, ind, ind_ant, dsem[dsem.hallazgo]))
-        j = f.with_suffix('.json')
-        j.write_text(json.dumps(res, ensure_ascii=False, indent=1, default=str), encoding='utf-8')
+        resumen['evolucion_planta'] = [dict(semana=n, lunes=str(l.date()), **{k: i[k] for k in ('reg', 'personas', 'pAdh', 'pOport', 'pTarea', 'hall', 'pHall', 'pClaro', 'pegadas', 'nota')})
+                                       for n, l, i in evol[None]]
+        resumen['evolucion_areas'] = {ar: [dict(semana=n, **{k: i[k] for k in ('reg', 'pAdh', 'pHall', 'pClaro')}) for n, l, i in evol[ar]] for ar in areas}
+        j = out / f'RIT_semanal_{a.planta.replace(" ", "_")}_S{num[defecto]}.json'
+        j.write_text(json.dumps(resumen, ensure_ascii=False, indent=1, default=str), encoding='utf-8')
         print(j)
 
 

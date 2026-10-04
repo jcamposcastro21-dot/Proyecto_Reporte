@@ -11,7 +11,7 @@ Hay dos reportes, cada uno con su skill:
 ```
 pip install -r requirements.txt
 python3 -m reporte.diario --planta "Nueva Aldea" --fecha 2026-10-02 --json
-python3 -m reporte.rit --planta "Nueva Aldea" --semana 2026-09-21 --json
+python3 -m reporte.rit --planta "Nueva Aldea" --semana 39 --json   # un HTML con todas las semanas + evolución
 ```
 
 ## Estructura
@@ -21,7 +21,7 @@ python3 -m reporte.rit --planta "Nueva Aldea" --semana 2026-09-21 --json
 | `reporte/fuente.py` | Carga de datos: Excel hoy; `cargar_qvd` / `cargar_sql` listos para la base de los QVD. Contrato de columnas. |
 | `reporte/calidad.py` | Reglas: título, causa, tipo de acción S/C/R, recurrencias |
 | `reporte/diario.py` | Cálculo "a la fecha", focos automáticos, HTML y JSON |
-| `reporte/rit.py` | Reporte semanal RIT: carga de la lista InicioTurno_SE, pauta 0–3 de hallazgos, adherencia, cuadrantes, personas, cruce con el Top 20 y HTML |
+| `reporte/rit.py` | Reporte RIT: carga de la lista InicioTurno_SE, pauta 0–3 de hallazgos, adherencia, cuadrantes, personas, cruce con el Top 20; un HTML con todas las semanas (numeración ISO) y la evolución global de los KPI |
 | `config/rit.json` | Parámetros RIT: días esperados, feriados, umbrales |
 | `config/clasificacion_acciones.csv` | Clasificación manual de acciones S/C/R; prevalece sobre la automática |
 | `config/pauta_eventos.csv` | Corrección manual de la pauta 0–3 por evento |
