@@ -2,9 +2,13 @@
   "extraKnownMarketplaces": {
     "ai-skills": {
       "source": { "source": "github", "repo": "sanjay3290/ai-skills" }
+    },
+    "ponytail": {
+      "source": { "source": "github", "repo": "DietrichGebert/ponytail" }
     }
   },
   "enabledPlugins": {
-    "ai-skills@ai-skills": true
+    "ai-skills@ai-skills": true,
+    "ponytail@ponytail": true
   }
 }
