@@ -1,0 +1,12 @@
+{
+ "_nota": "Parámetros del reporte semanal RIT. Umbrales: [verde, ámbar] en %. Operación: 5 turnos y 2 por día, por lo que cada turno trabaja ~0,4 de los días.",
+ "operacion_dias_por_dia": 0.4,
+ "feriados": ["2026-08-15", "2026-09-18", "2026-09-19", "2026-10-12", "2026-10-31", "2026-11-01", "2026-12-08", "2026-12-25"],
+ "umbrales": {
+  "adherencia": [90, 70],
+  "oportuno": [90, 75],
+  "tarea_se": [95, 85],
+  "claridad": [70, 50]
+ },
+ "personas": {"min_hallazgos": 3}
+}
