@@ -61,9 +61,9 @@ Al hacer clic en una semana (punto, columna o fila), se abre esa semana. Al hace
 ## Parámetros
 
 Están en `config/rit.json`:
-- días esperados de Operación (`operacion_dias_por_dia`, hoy 0,4: 5 turnos, 2 por día);
+- días esperados de Operación: se toman de `config/rotacion_turnos.csv` (fecha, turno, código D/N/DC/AD). Cuando llegue la rotación de 2027, agrégala a ese archivo. Fuera del calendario se usa `operacion_dias_por_dia` (0,4);
 - feriados;
 - umbrales `[verde, ámbar]` de adherencia, registro oportuno, tarea SE y claridad;
 - mínimo de hallazgos para evaluar a una persona.
 
-Si el usuario entrega el calendario real de turnos, reemplaza la aproximación de 0,4.
+

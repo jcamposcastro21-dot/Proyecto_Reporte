@@ -80,7 +80,17 @@ def sugerencia(tipo, nota):
 
 
 # ================================================================ carga y preparación
-def cargar(ruta, planta):
+def cargar_rotacion(ruta=CONFIG / 'rotacion_turnos.csv'):
+    """Calendario de turnos de Operación: {(fecha, turno): D | N | DC | AD | ''}.
+    N en el día X = noche que termina el día X (20:00 de X-1 a 08:00 de X)."""
+    if not Path(ruta).exists():
+        return {}
+    r = pd.read_csv(ruta, parse_dates=['fecha'], keep_default_na=False)
+    return {(f, t): c for f, t, c in zip(r.fecha, r.turno, r.codigo)}
+
+
+def cargar(ruta, planta, rot=None):
+    rot = rot or {}
     d = pd.read_excel(ruta)
     d.columns = [c.strip() for c in d.columns]
     d = d[d.Planta == planta].copy()
@@ -88,9 +98,22 @@ def cargar(ruta, planta):
     d['Creado'] = pd.to_datetime(d.Creado)
     d['sin_fecha'] = d.Fecha.isna()  # sin fecha del RIT: se usa la de registro y no cuenta como oportuno
     d['Fecha'] = d.Fecha.fillna(d.Creado)
-    d['dia'] = d.Fecha.dt.normalize()
-    d['semana'] = d.dia - pd.to_timedelta(d.dia.dt.dayofweek, unit='D')
     d['Equipo'] = d.Equipo.fillna('(sin equipo)')
+    d['dia'] = d.Fecha.dt.normalize()
+    # Operación: un RIT de las 20:00 o más tarde es el inicio del turno noche, que pertenece a la jornada del día siguiente
+    d['turno'] = d.Equipo.str.extract(r'Turno ([A-E])')[0]
+    op = (d.Especialidad == 'Operación') & d.turno.notna()
+    d.loc[op & (d.Fecha.dt.hour >= 20), 'dia'] = d.dia + pd.Timedelta(days=1)
+    d['cod_turno'] = [rot.get((x, t)) if o else None for x, t, o in zip(d.dia, d.turno, op)]
+    # día que cuenta para adherencia: en Operación solo si el turno estaba de día (D) o de noche (N) según el calendario;
+    # sin calendario para esa fecha, se cuenta igual
+    d['en_turno'] = ~op | d.cod_turno.isna() | d.cod_turno.isin(['D', 'N'])
+    # AD = administrativo: no necesariamente lidera el RIT; no se exige ni se marca como falta. DC = descanso: registro fuera de turno.
+    d['fuera_turno'] = op & d.cod_turno.notna() & ~d.cod_turno.isin(['D', 'N', 'AD'])
+    # equipo mal registrado: Operación sin turno A–E, o Mantención con turno / sin equipo; no entra a la adherencia
+    d['equipo_mal'] = d.apply(lambda r: not equipo_valido(r.Especialidad, r.Equipo), axis=1)
+    d['dia_adh'] = d.dia.where(d.en_turno & ~d.equipo_mal)
+    d['semana'] = d.dia - pd.to_timedelta(d.dia.dt.dayofweek, unit='D')
     d['Creado por'] = d['Creado por'].fillna('(sin creador)').map(lambda s: ' '.join(str(s).split()))
     d['compartida'] = d['Creado por'].str.lower().str.startswith('operador')
     d['retraso_h'] = (d.Creado - d.Fecha).dt.total_seconds() / 3600
@@ -136,14 +159,32 @@ def cargar_top20(ruta, planta):
     return pd.DataFrame(filas)
 
 
-def esperados(especialidad, desde, hasta, cfg):
-    """Días de RIT esperados por equipo entre desde y hasta (inclusive)."""
+def equipo_valido(especialidad, equipo):
+    if especialidad == 'Operación':
+        return bool(re.search(r'Turno [A-E]', str(equipo)))
+    return bool(re.search(r'(Mecánico|Electrocontrol)', str(equipo))) and 'Turno' not in str(equipo)
+
+
+def esperados(especialidad, desde, hasta, cfg, equipo=None):
+    """Días de RIT esperados por equipo entre desde y hasta (inclusive).
+    Mantención: días hábiles. Operación: días en que el turno está de día (D) o de noche (N) según
+    config/rotacion_turnos.csv; los días AD, DC o sin turno no se esperan. Fuera del calendario: 0,4 por día."""
     if cfg.get('_corte'):
         hasta = min(pd.Timestamp(hasta), pd.Timestamp(cfg['_corte']))
     dias = pd.date_range(desde, hasta)
+    if equipo is not None and not equipo_valido(especialidad, equipo):
+        return 0
     if especialidad == 'Mantención':
         fer = set(pd.to_datetime(cfg.get('feriados', [])))
         return sum(1 for x in dias if x.dayofweek < 5 and x not in fer)
+    rot = cfg.get('_rot', {})
+    t = re.search(r'Turno ([A-E])', equipo or '')
+    if t and rot:
+        n = 0.0
+        for x in dias:
+            c = rot.get((x, t.group(1)))
+            n += cfg.get('operacion_dias_por_dia', 0.4) if c is None else (1 if c in ('D', 'N') else 0)
+        return round(n, 1)
     return round(len(dias) * cfg.get('operacion_dias_por_dia', 0.4), 1)
 
 
@@ -151,19 +192,20 @@ def esperados(especialidad, desde, hasta, cfg):
 def indicadores(df, esp_dias):
     """esp_dias: días esperados del conjunto (suma de los equipos)."""
     h = df[df.hallazgo]
-    dias_rit = df.groupby(['Area', 'Especialidad', 'Equipo']).dia.nunique().sum() if len(df) else 0
+    dias_rit = df.groupby(['Area', 'Especialidad', 'Equipo']).dia_adh.nunique().sum() if len(df) else 0
     pct = lambda a, b: round(100 * a / b) if b else None
     return dict(reg=len(df), dias=int(dias_rit), esp=esp_dias, pAdh=min(100, pct(dias_rit, esp_dias)) if esp_dias else None,
                 pOport=pct(df.oportuno.sum(), len(df)), pTarea=pct(df.tarea_se.sum(), len(df)), pComp=pct(df.completo.sum(), len(df)),
                 hall=len(h), pHall=pct(len(h), len(df)), claros=int(h.claro.sum()), pClaro=pct(h.claro.sum(), len(h)),
                 nota=round(float(h.nota.mean()), 1) if len(h) else None, n0=int((h.nota == 0).sum()), n1=int((h.nota == 1).sum()),
-                pegadas=int(h.motivo.str.contains('lista pegada').sum()), personas=df.loc[~df.compartida, 'Creado por'].nunique())
+                pegadas=int(h.motivo.str.contains('lista pegada').sum()), personas=df.loc[~df.compartida, 'Creado por'].nunique(),
+                fuera=int((df.fuera_turno | df.equipo_mal).sum()))
 
 
 def tabla_equipos(d, desde, hasta, cfg):
     filas = []
     for (a, e, q), g in d.groupby(['Area', 'Especialidad', 'Equipo']):
-        esp = esperados(e, desde, hasta, cfg)
+        esp = esperados(e, desde, hasta, cfg, q)
         ind = indicadores(g, esp)
         lider = g.LiderEquipo.dropna().map(lambda s: s.split(',')[0].split('@')[0]).mode()
         filas.append(dict(Area=a, Especialidad=e, Equipo=q, lider=lider.iloc[0] if len(lider) else '', **ind))
@@ -237,12 +279,14 @@ def fila_equipo(r, cfg, serie, nivel=0):
     data = f' class="clic" data-eq="{esc(r["clave"])}"' if r.get('clave') else ''
     t = 'b' if nivel == 0 and not r.get('clave') else 'span'
     return (f'<tr{data}><td><{t}>{nombre}</{t}>{"<div class=ev-meta>" + esc(r["lider"]) + "</div>" if r.get("lider") else ""}</td>'
-            f'<td class="num">{r["reg"]}</td><td class="num">{r["dias"]}/{r["esp"]:g}</td><td class="num">{pill(r["pAdh"], "adherencia", cfg)}</td>'
+            f'<td class="num">{r["reg"]}</td><td class="num">{r["dias"]}/{r["esp"]:g}</td><td class="num">{pill(r["pAdh"], "adherencia", cfg) if r["esp"] else SIN_TURNO}</td>'
             f'<td class="num">{pill(r["pOport"], "oportuno", cfg)}</td><td class="num">{pill(r["pTarea"], "tarea_se", cfg)}</td>'
             f'<td class="num">{r["hall"]} <small>({int(r["pHall"]) if r["pHall"] is not None else "s/d"}%)</small></td>'
             f'<td class="num">{pill(r["pClaro"], "claridad", cfg)} <small>{r["claros"]}/{r["hall"]}</small></td>'
             f'<td class="num">{r["pegadas"] or "—"}</td><td>{tendencia(serie)}</td></tr>')
 
+
+SIN_TURNO = '<span class="pill gray" title="El turno no estuvo de día ni de noche esta semana (descanso o administrativo): no se evalúa">sin turno</span>'
 
 CAB = ('<tr><th>Área / Especialidad / Equipo</th><th>Registros</th><th>Días RIT / esperados</th><th>Adherencia</th><th>Registro oportuno</th>'
        '<th>Tarea SE seleccionada</th><th>Con hallazgo</th><th>Hallazgos claros (≥2)</th><th>Listas pegadas</th><th>Adherencia 8 sem.</th></tr>')
@@ -373,7 +417,7 @@ def datos_detalle(d4, eq_claves):
                                area=r.Area, esp=r.Especialidad, eq=r.Equipo, per=r['Creado por'], comp=bool(r.compartida), tarea=r.Tarea if isinstance(r.Tarea, str) else '',
                                tarea_se=bool(r.tarea_se), fr=r.FaltaRiesgo if isinstance(r.FaltaRiesgo, str) else '—', fc=r.FaltaControl if isinstance(r.FaltaControl, str) else '—',
                                ft=r.FaltaTarea if isinstance(r.FaltaTarea, str) else '—', tit=r['Título'] if isinstance(r['Título'], str) else '',
-                               estado=r.EstadoMejora if isinstance(r.EstadoMejora, str) else '', items=items, sem=r.semana.strftime('%Y-%m-%d'))
+                               estado=r.EstadoMejora if isinstance(r.EstadoMejora, str) else '', ct=r.cod_turno if isinstance(r.cod_turno, str) else '', items=items, sem=r.semana.strftime('%Y-%m-%d'))
     eqs = {k: [int(i) for i in d4[(d4.Area + '|' + d4.Especialidad + '|' + d4.Equipo) == k].sort_values('Fecha', ascending=False).ID] for k in eq_claves}
     pers = {p: [int(i) for i in g.sort_values('Fecha', ascending=False).ID] for p, g in d4.groupby('Creado por')}
     return dict(reg=regs, eq=eqs, per=pers)
@@ -397,6 +441,7 @@ function verReg(id){const r=D.reg[id];if(!r)return;
  const it=r.items.map(i=>`<div class="card card-pad" style="margin:8px 0;box-shadow:none"><b>${esc(i.tipo)}</b> ${chip(i.nota>=2?'ok':i.nota==1?'amb':'red','pauta '+i.nota+'/3')} <span class="ev-meta">${esc(i.motivo)}</span><div class="txt">${esc(i.texto)||'—'}</div><div class="ev-meta" style="margin-top:6px"><b>Cómo mejorarlo:</b> ${esc(i.sug)}</div></div>`).join('');
  abrir(`<h3>Levantamiento ${id}</h3><p>${esc(r.area)} · ${esc(r.esp)} · ${esc(r.eq)} · ${esc(r.per)}${r.comp?' 👥 cuenta compartida':''} · Semana ${D.num[r.sem]||''}</p>
  <table class="kv"><tr><td>Fecha RIT</td><td>${r.f}</td></tr><tr><td>Registrado</td><td>${r.creado}${r.ret!==null?' ('+r.ret+' h después)':''}</td></tr>
+ ${r.ct?`<tr><td>Turno según calendario</td><td>${{D:'D (día)',N:'N (noche)',DC:'DC (descanso)',AD:'AD (administrativo)'}[r.ct]||esc(r.ct)} ${['D','N'].includes(r.ct)?'':r.ct==='AD'?chip('gray','administrativo: no se exige el RIT; no suma ni resta adherencia'):chip('amb','fuera de turno (descanso): revisar si se eligió bien el turno')}</td></tr>`:''}
  <tr><td>Tarea revisada</td><td>${esc(r.tarea)} ${r.tarea_se?'':chip('amb','sin tarea de SoftExpert')}</td></tr>
  <tr><td>¿Falta riesgo / control / tarea?</td><td>${esc(r.fr)} / ${esc(r.fc)} / ${esc(r.ft)}</td></tr><tr><td>Observación</td><td>${esc(r.tit)||'—'}</td></tr><tr><td>Estado mejora</td><td>${esc(r.estado)}</td></tr></table>
  <h4>Hallazgos informados</h4>${it||'<p class="ev-meta">No informa hallazgos: la tarea se revisó y no se encontró nada que mejorar (cuenta para adherencia).</p>'}`);}
@@ -444,7 +489,7 @@ def vista(nombre, dsem, d4, eq_sem, eq4, personas, top, series, cfg, ind, ind_an
     focos = com.get('focos') or focos_auto(eq_sem, eq4, ind, ind_ant, h)
     lectura = f'<div class="card logro" style="margin-bottom:14px">{com["lectura"]}</div>' if com.get('lectura') else ''
     k = '<div class="kpi-grid">' + ''.join([
-        kpi('Registros RIT', ind['reg'], f'{ind["personas"]} personas · {int(dsem.compartida.sum())} con cuenta compartida'),
+        kpi('Registros RIT', ind['reg'], f'{ind["personas"]} personas · {int(dsem.compartida.sum())} con cuenta compartida' + (f' · {ind["fuera"]} en descanso o con equipo mal registrado' if ind['fuera'] else '')),
         kpi('Adherencia', f'{ind["pAdh"]}%' if ind['pAdh'] is not None else 's/d', f'{ind["dias"]} de {ind["esp"]:g} días-equipo esperados' + delta(ind['pAdh'], ind_ant and ind_ant['pAdh']), colk(ind['pAdh'], 'adherencia', cfg)),
         kpi('Registro oportuno', f'{ind["pOport"]}%' if ind['pOport'] is not None else 's/d', 'registrado ≤12 h del RIT' + delta(ind['pOport'], ind_ant and ind_ant['pOport']), colk(ind['pOport'], 'oportuno', cfg)),
         kpi('Con hallazgo', f'{ind["hall"]}', f'{ind["pHall"] if ind["pHall"] is not None else "s/d"}% de los registros' + delta(ind['pHall'], ind_ant and ind_ant['pHall'])),
@@ -459,8 +504,9 @@ def vista(nombre, dsem, d4, eq_sem, eq4, personas, top, series, cfg, ind, ind_an
 <div class="ideas-fuerza-note">{"Redactado tras revisión" if com.get("focos") else "Generado automáticamente por reglas"}. Adherencia = hacer y registrar el RIT; calidad = que el hallazgo informado se entienda.</div></div>
 <div class="section-title">🧭 ¿Quién necesita apoyo? Adherencia × claridad por equipo (4 semanas hasta la seleccionada)</div>{bloque_cuadrantes(eq4, cfg)}
 <div class="section-title">📊 {"Detalle por área y especialidad (semana) — seleccione un área arriba para ver cada equipo" if area is None else "Detalle por especialidad y equipo (semana)"}</div>{bloque_tabla(dsem, eq_sem, series, cfg, area)}
-<div class="ev-meta" style="margin-top:6px">Días esperados: Mantención = días hábiles (lun–vie, sin feriados); Operación = {cfg["operacion_dias_por_dia"]:g} × días de la semana por turno (5 turnos, 2 por día).
-Cada equipo entra al cálculo desde su primera semana con registro. Clic en un equipo para ver sus levantamientos.</div>
+<div class="ev-meta" style="margin-top:6px">Días esperados: Mantención = días hábiles (lun–vie, sin feriados); Operación = días en que el turno está de día (D) o de noche (N) según la rotación de turnos;
+los días de descanso (DC) y administrativos (AD) no se exigen ("sin turno" = el turno no estuvo de D ni N esa semana). Un RIT de las 20:00 en adelante es del turno noche del día siguiente.
+Cada equipo entra al cálculo desde su primera semana con registro; los registros con equipo mal informado (Operación sin turno A–E) no cuentan para adherencia. Clic en un equipo para ver sus levantamientos.</div>
 <div class="section-title">👤 Personas (4 semanas hasta la seleccionada)</div>{bloque_personas(personas, top, cfg)}
 <div class="section-title">📝 Ejemplos de la semana</div>{bloque_ejemplos(h)}
 {"" if area else f'<div class="section-title">⭐ Top 20 piloto SoftExpert — ¿se sostiene su calidad?</div>{bloque_top20(top, personas, cfg)}'}'''
@@ -494,7 +540,7 @@ def datos_detalle(d, claves, semanas):
                                area=r.Area, esp=r.Especialidad, eq=r.Equipo, per=r['Creado por'], comp=bool(r.compartida), tarea=r.Tarea if isinstance(r.Tarea, str) else '',
                                tarea_se=bool(r.tarea_se), fr=r.FaltaRiesgo if isinstance(r.FaltaRiesgo, str) else '—', fc=r.FaltaControl if isinstance(r.FaltaControl, str) else '—',
                                ft=r.FaltaTarea if isinstance(r.FaltaTarea, str) else '—', tit=r['Título'] if isinstance(r['Título'], str) else '',
-                               estado=r.EstadoMejora if isinstance(r.EstadoMejora, str) else '', items=items, sem=r.semana.strftime('%Y-%m-%d'))
+                               estado=r.EstadoMejora if isinstance(r.EstadoMejora, str) else '', ct=r.cod_turno if isinstance(r.cod_turno, str) else '', items=items, sem=r.semana.strftime('%Y-%m-%d'))
     clave = d.Area + '|' + d.Especialidad + '|' + d.Equipo
     eqs = {k: [int(i) for i in d[clave == k].sort_values('Fecha', ascending=False).ID] for k in claves}
     pers = {p: [int(i) for i in g.sort_values('Fecha', ascending=False).ID] for p, g in d.groupby('Creado por')}
@@ -613,7 +659,7 @@ def evaluar(d, lun, cfg, ctx):
     for c in ('pOport', 'pTarea', 'pComp', 'pHall', 'pClaro', 'nota', 'lider'):
         if c not in eq_sem:
             eq_sem[c] = None
-    eq_sem['esp'] = [esperados(e, lun, dom, cfg) for e in eq_sem.Especialidad]
+    eq_sem['esp'] = [esperados(e, lun, dom, cfg, q) for e, q in zip(eq_sem.Especialidad, eq_sem.Equipo)]
     eq_sem['pAdh'] = [min(100, round(100 * x / y)) if y else None for x, y in zip(eq_sem.dias, eq_sem.esp)]
     eq_sem['lider'] = eq_sem.lider.fillna('')
     eq_sem = eq_sem.astype(object).where(eq_sem.notna(), None)
@@ -623,7 +669,7 @@ def evaluar(d, lun, cfg, ctx):
     eq4['dias'] = eq4.dias.fillna(0)
     eq4['hall'] = eq4.hall.fillna(0).astype(int)
     # días esperados en 4 semanas, desde la semana en que el equipo empezó a registrar
-    eq4['esp'] = [esperados(e, max(ini4, ctx['inicio'][(a, e, q)]), dom, cfg) for a, e, q in zip(eq4.Area, eq4.Especialidad, eq4.Equipo)]
+    eq4['esp'] = [esperados(e, max(ini4, ctx['inicio'][(a, e, q)]), dom, cfg, q) for a, e, q in zip(eq4.Area, eq4.Especialidad, eq4.Equipo)]
     eq4['pAdh'] = [min(100, round(100 * x / y)) if y else None for x, y in zip(eq4.dias, eq4.esp)]
     eq4['pClaro'] = eq4.pClaro.astype(object).where(eq4.pClaro.notna(), None)
     eq4['cuad'] = [cuadrante(x, c, h, cfg) for x, c, h in zip(eq4.pAdh, eq4.pClaro, eq4.hall)]
@@ -636,13 +682,13 @@ def evaluar(d, lun, cfg, ctx):
             if s < ctx['inicio'][(r.Area, r.Especialidad, r.Equipo)]:
                 continue
             dias = ctx['dias'].get((r.Area, r.Especialidad, r.Equipo, s), 0)
-            esp = esperados(r.Especialidad, s, s + pd.Timedelta(days=6), cfg)
+            esp = esperados(r.Especialidad, s, s + pd.Timedelta(days=6), cfg, r.Equipo)
             for clave in ((r.Area,), (r.Area, r.Especialidad), (r.Area, r.Especialidad, r.Equipo)):
                 acc = series.setdefault(clave, {}).setdefault(s, [0, 0])
                 acc[0] += dias
                 acc[1] += esp
     series = {k: [(s, min(100, round(100 * v[s][0] / v[s][1])) if s in v and v[s][1] else None) for s in semanas8] for k, v in series.items()}
-    esp_ant = lambda df: sum(esperados(e, lun - pd.Timedelta(days=7), lun - pd.Timedelta(days=1), cfg) for e in df.Especialidad)
+    esp_ant = lambda df: sum(esperados(e, lun - pd.Timedelta(days=7), lun - pd.Timedelta(days=1), cfg, q) for e, q in zip(df.Especialidad, df.Equipo))
     act_ant = ctx['activos'](lun - pd.Timedelta(days=7))
     return dict(lun=lun, dom=dom, dsem=dsem, dant=dant, d4=d4, eq_sem=eq_sem, eq4=eq4, series=series, act=act, act_ant=act_ant, esp_ant=esp_ant)
 
@@ -661,9 +707,11 @@ def main(argv=None):
     cfg = json.loads((CONFIG / 'rit.json').read_text(encoding='utf-8'))
     ruta = Path(a.excel) if a.excel else sorted(Path('data').glob('RIT_*.xlsx'))[-1]
     top_ruta = a.top20 or next(iter(sorted(Path('data').glob('Top_usuarios*.html'))), None)
-    d = cargar(ruta, a.planta)
+    rot = cargar_rotacion()
+    cfg['_rot'] = rot
+    d = cargar(ruta, a.planta, rot)
     top = cargar_top20(top_ruta, a.planta)
-    corte = d.dia.max()
+    corte = d[d.Fecha.dt.hour < 20].dia.max() if len(d) else d.dia.max()
     cfg['_corte'] = str(corte.date())
 
     lunes = list(pd.date_range(d.semana.min(), d.semana.max(), freq='7D'))
@@ -681,7 +729,7 @@ def main(argv=None):
 
     equipos = d.groupby(['Area', 'Especialidad', 'Equipo']).semana.min()
     inicio = {k: v for k, v in equipos.items()}
-    ctx = dict(inicio=inicio, dias=d.groupby(['Area', 'Especialidad', 'Equipo', 'semana']).dia.nunique().to_dict(),
+    ctx = dict(inicio=inicio, dias=d.groupby(['Area', 'Especialidad', 'Equipo', 'semana']).dia_adh.nunique().to_dict(),
                activos=lambda lun: pd.DataFrame([k for k, v in inicio.items() if v <= lun], columns=['Area', 'Especialidad', 'Equipo']))
     areas = sorted(d.Area.unique())
     comentarios = json.loads(Path(a.comentarios).read_text(encoding='utf-8')) if a.comentarios else {}

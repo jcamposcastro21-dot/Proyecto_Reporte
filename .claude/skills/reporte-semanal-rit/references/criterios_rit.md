@@ -45,7 +45,20 @@ Cada fila es una tarea revisada en un RIT:
 
 Días esperados:
 - **Mantención**: días hábiles, de lunes a viernes, sin feriados.
-- **Operación**: 0,4 × días de la semana por turno (5 turnos, 2 por día), es decir, unos 2,8 días por semana. Es una aproximación: con el calendario real de turnos se puede reemplazar.
+- **Operación**: según la **rotación de turnos** de la planta (`config/rotacion_turnos.csv`, extraída de la hoja "Rotación Turnos" del archivo de correos PCNA, abril a diciembre de 2026). Cada día hay un turno de día y uno de noche:
+
+| Código | Significado | ¿Se exige RIT? |
+|---|---|---|
+| D | Turno día (08:00 a 20:00) | Sí |
+| N | Turno noche: la N del día X es la noche de 20:00 de X−1 a 08:00 de X | Sí |
+| DC | Descanso | No. Un registro ese día se marca "fuera de turno" para revisar si se eligió bien el turno |
+| AD | Administrativo: no necesariamente lidera el inicio de turno | No. Si registra, no suma ni resta adherencia y no se marca como falta |
+
+Reglas de aplicación:
+- Un RIT registrado a las 20:00 o después pertenece al turno noche del día siguiente. Con esta regla, el 96% de los RIT de Operación caen en días D o N del turno que los registró.
+- Si un turno no estuvo de D ni N en toda la semana, aparece como **"sin turno"** y no se evalúa.
+- Antes del 1 de abril no hay calendario: se usa la aproximación de 0,4 días por día (5 turnos, 2 por día).
+- **Equipo mal registrado** (Operación sin turno A–E, como "Electrocontrol L1" marcado como Operación, o un registro sin equipo): no cuenta para adherencia, pero sus hallazgos sí se evalúan.
 
 Señales de propósito, no de cumplimiento:
 - **Registran sin encontrar nada**: buena adherencia, pero 0 hallazgos en 4 semanas. Puede ser una revisión real de tareas bien documentadas o un registro por cumplir. Se valida acompañando un RIT.
