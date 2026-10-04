@@ -1,5 +1,5 @@
 {
- "_nota": "Parámetros del reporte RIT. Umbrales: [verde, ámbar] en %. Los días esperados de Operación salen de config/rotacion_turnos.csv (D y N se exigen; DC y AD no); operacion_dias_por_dia solo se usa para fechas sin calendario.",
+ "_nota": "Parámetros del reporte RIT. Metas en %. Los días esperados de Operación salen de config/rotacion_turnos.csv (D y N se exigen; DC y AD no); operacion_dias_por_dia solo se usa para fechas sin calendario.",
  "operacion_dias_por_dia": 0.4,
  "feriados": [
   "2026-08-15",
@@ -11,25 +11,24 @@
   "2026-12-08",
   "2026-12-25"
  ],
- "umbrales": {
-  "adherencia": [
-   90,
-   70
-  ],
-  "oportuno": [
-   90,
-   75
-  ],
-  "tarea_se": [
-   95,
-   85
-  ],
-  "claridad": [
-   70,
-   50
-  ]
- },
  "personas": {
   "min_hallazgos": 3
- }
+ },
+ "inicio_general_semana": null,
+ "_inicio_general": "Semana ISO desde la que se evalúa adherencia a todos los equipos. null = automática: primera semana en que registran todas las áreas en ambas especialidades (S26 en 2026; Madera fue piloto desde S6).",
+ "metas": {
+  "adherencia": 90,
+  "trazabilidad": 90,
+  "ejecucion": 90,
+  "redaccion_accionable": 50
+ },
+ "_metas": "adherencia: meta de la planta. trazabilidad, ejecucion y redaccion_accionable: referencias de trabajo (no son metas oficiales).",
+ "categorias": {
+  "adherencia_alta": 90,
+  "calidad_alta": 60,
+  "min_hallazgos": 3,
+  "trazabilidad_alerta": 50
+ },
+ "_categorias": "Eje X = adherencia del equipo (4 semanas); eje Y = % de hallazgos entendibles (redacción >=2). Alerta de trazabilidad si >= 50% de sus RIT vienen de cuentas compartidas.",
+ "muestra_minima": 5
 }

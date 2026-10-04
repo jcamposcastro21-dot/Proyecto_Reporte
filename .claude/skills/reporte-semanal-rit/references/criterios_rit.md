@@ -3,111 +3,123 @@
 ## 1. Qué es el RIT y qué se espera de él
 
 **Ficha de instancia "Inicio de turno Mantención"**, entregada por el usuario:
-
-- **Participantes**: lo lidera el jefe de especialidad; son obligatorios el líder técnico (si aplica) y los técnicos; son opcionales el SI y las empresas de servicio.
-- **Propósito**: asegurar que el equipo inicie el turno alineado, con tareas claras y riesgos controlados, para una ejecución segura y eficiente.
-- **Preparación**: programa semanal; riesgos y medidas de control de las tareas del día (SoftExpert y App Gestión de Riesgos).
+- **Líder**: jefe de especialidad. **Obligatorios**: líder técnico (si aplica) y técnicos. **Opcionales**: SI y empresas de servicio.
+- **Propósito**: que el equipo inicie el turno alineado, con tareas claras y riesgos controlados.
 - **Agenda (5 × 5 min)**:
-  1. SSO, MA, paso 3 (si aplica) y novedades.
-  2. Novedades y condiciones del área.
+  1. SSO, MA y novedades.
+  2. Condiciones del área.
   3. Distribución de trabajos.
-  4. **Riesgos: seleccionar una tarea a revisar en SoftExpert, analizar sus riesgos y controles en todos los ámbitos de riesgo, identificar posibles ajustes necesarios en SE y registrar.**
-  5. Revisión de compromisos y cierre.
-- **Producto**: equipo alineado; compromisos claros; **registro del análisis de riesgo en SoftExpert, identificando actualización de documentos, cambios en riesgos y/o cambios en procesos**.
+  4. **Riesgos: seleccionar una tarea en SoftExpert, analizar sus riesgos y controles en todos los ámbitos, identificar ajustes en SE y registrar.**
+  5. Compromisos y cierre.
+- **Producto**: registro del análisis de riesgo en SoftExpert, con la actualización de documentos, riesgos o procesos que corresponda.
 
-**Playbook MGO** (inicio de turno de Operaciones, 20 minutos):
-- Etapas: revisión del turno anterior, revisión de tareas, distribución operativa, priorizar la tarea crítica (repasar riesgos y controles) y análisis de contingencias.
-- "Los riesgos se revisarán en el día a día durante el inicio de turno".
-- Los levantamientos alimentan la actualización de la **matriz de riesgos** y de los **documentos operativos** (procedimiento, HTE, SOP, checklist).
-- Barreras al uso de documentos: desactualizado, no refleja la realidad, no se conoce, no está disponible.
-- KPIs relacionados: riesgos latentes, controles implementados para riesgos medios y altos, y documentos actualizados.
+**Playbook MGO**: los riesgos se revisan en el día a día durante el inicio de turno. Los levantamientos alimentan la matriz de riesgos y los documentos operativos (procedimiento, HTE, SOP, checklist).
 
-## 2. Estructura de la base (lista `InicioTurno_SE`)
+## 2. Datos (lista `InicioTurno_SE`)
 
-Cada fila es una tarea revisada en un RIT:
-- Contexto: Área, Especialidad (Operación / Mantención), Equipo (Turno A–E, con L1/L2 en Fibra; Mecánico / Electrocontrol), Fecha (del RIT), Creado (registro) y Tarea (de SoftExpert).
-- Lo que se encontró:
-  - `FaltaRiesgo` + `RiesgoTexto`
-  - `FaltaControl` + `ControlTexto`
-  - `FaltaTarea` + `NuevaTarea`
-  - `Título` (observación)
-- Seguimiento: `EstadoMejora` (Abierta / Cerrada / No Aplica), `ComentarioCierre`, LiderEquipo, Implementador, Ingeniero, Creado por.
+Cada fila es un RIT, es decir, una tarea revisada:
+- Contexto: Área, Especialidad, Equipo, Fecha (del RIT), Creado (registro), Creado por, Tarea.
+- Hallazgos: `FaltaRiesgo`/`RiesgoTexto`, `FaltaControl`/`ControlTexto`, `FaltaTarea`/`NuevaTarea`, `Título` (observación).
+- Seguimiento: `EstadoMejora`, `ComentarioCierre`, Implementador, Ingeniero, LiderEquipo.
 
-"No Aplica" significa que se revisó la tarea y no se encontró nada que mejorar: cuenta para la adherencia, no para la calidad. Las cuentas "Operador …" son compartidas por turno.
+Configuración:
+- `config/rotacion_turnos.csv`: abril a diciembre de 2026.
+- `config/cuentas_compartidas.csv`: correos genéricos ce05.* del listado PCNA.
+- `config/validacion_tecnica.csv`: validaciones de pertinencia.
 
-## 3. Pilar 1: Adherencia a la práctica (¿se hace y se registra?)
+## 3. Los cinco niveles (no se combinan en un puntaje único)
 
-| Indicador | Fórmula | Verde / ámbar |
+| Nivel | Pregunta | Indicador | Cálculo |
+|---|---|---|---|
+| 1 | ¿Se realiza cuando corresponde? | **Adherencia** | Días con RIT en un día exigido / días exigidos, por equipo y semana, con tope por equipo-semana. Meta 90% |
+| 2 | ¿Es trazable? | **Trazabilidad individual** | RIT con cuenta personal / RIT. Compartida = cuenta genérica de turno o puesto |
+| 2 | ¿Quedó bien registrado? | **Registro completo** | Tarea SE seleccionada + formulario completo + registrado ≤12 h. Los componentes se muestran por separado |
+| 3 | ¿El hallazgo se entiende? | **Redacción 0–3** (automática) | Entendibles = ≥2; claros y accionables = 3. El RIT toma la nota más baja de sus ítems |
+| 4 | ¿Lo propuesto corresponde? | **Pertinencia técnica** | Solo con validación registrada; si no, "Pendiente de validación técnica" |
+| 5 | ¿Mejoró SoftExpert? | **Efectividad** | Estado de la mejora en la lista y tareas con hallazgos repetidos. Aceptado / rechazado / corregido: no disponible |
+
+**Días exigidos para la adherencia:**
+- **Mantención**: días hábiles, sin feriados.
+- **Operación**: según la rotación de turnos.
+
+| Código | Significado | ¿Se exige el RIT? |
 |---|---|---|
-| Adherencia | días con RIT registrado / días esperados (tope 100%) | ≥90 / ≥70 |
-| Registro oportuno | registros cargados entre 0 y 12 h después de la hora del RIT | ≥90 / ≥75 |
-| Tarea SE seleccionada | registros con una tarea de SoftExpert (no "Notificar sin SE", "Agregar tarea en SE", "Parada de área/PGP") | ≥95 / ≥85 |
+| D | Día, de 08:00 a 20:00 | Sí |
+| N | Noche: la N del día X va de 20:00 de X−1 a 08:00 de X. Un RIT de las 20:00 en adelante cuenta para el día siguiente | Sí |
+| DC | Descanso | No. Si registra, se marca "en descanso" |
+| AD | Administrativo: no necesariamente lidera el RIT | No. Si registra, no suma ni resta |
 
-Días esperados:
-- **Mantención**: días hábiles, de lunes a viernes, sin feriados.
-- **Operación**: según la **rotación de turnos** de la planta (`config/rotacion_turnos.csv`, extraída de la hoja "Rotación Turnos" del archivo de correos PCNA, abril a diciembre de 2026). Cada día hay un turno de día y uno de noche:
+Otras reglas:
+- Un turno sin días D ni N en el período queda "sin turno" y no se evalúa.
+- **Semana de inicio general: S26**, la primera en que registran todas las áreas en ambas especialidades. Madera fue piloto desde S6. Antes de S26 la adherencia no se evalúa.
+- Un **equipo mal registrado** (Operación sin turno A–E, o sin equipo) no cuenta para la adherencia, pero sus hallazgos sí se evalúan.
+- La **adherencia por persona no existe**: el RIT se exige al equipo/turno.
+- **Muestra reducida**: denominador menor que 5. Se marca y no se interpreta sola.
 
-| Código | Significado | ¿Se exige RIT? |
-|---|---|---|
-| D | Turno día (08:00 a 20:00) | Sí |
-| N | Turno noche: la N del día X es la noche de 20:00 de X−1 a 08:00 de X | Sí |
-| DC | Descanso | No. Un registro ese día se marca "fuera de turno" para revisar si se eligió bien el turno |
-| AD | Administrativo: no necesariamente lidera el inicio de turno | No. Si registra, no suma ni resta adherencia y no se marca como falta |
+## 4. Pauta automática de redacción (nivel 3)
 
-Reglas de aplicación:
-- Un RIT registrado a las 20:00 o después pertenece al turno noche del día siguiente. Con esta regla, el 96% de los RIT de Operación caen en días D o N del turno que los registró.
-- Si un turno no estuvo de D ni N en toda la semana, aparece como **"sin turno"** y no se evalúa.
-- Antes del 1 de abril no hay calendario: se usa la aproximación de 0,4 días por día (5 turnos, 2 por día).
-- **Equipo mal registrado** (Operación sin turno A–E, como "Electrocontrol L1" marcado como Operación, o un registro sin equipo): no cuenta para adherencia, pero sus hallazgos sí se evalúan.
+Es una evaluación de **redacción**, no de calidad técnica. La pregunta es: ¿quien implementa en SoftExpert entendería qué cambiar sin preguntar?
 
-Señales de propósito, no de cumplimiento:
-- **Registran sin encontrar nada**: buena adherencia, pero 0 hallazgos en 4 semanas. Puede ser una revisión real de tareas bien documentadas o un registro por cumplir. Se valida acompañando un RIT.
-- **Cuentas compartidas**: no permiten saber quién analizó ni quién redactó.
+| Nota | Nombre | Criterio | Ejemplos reales |
+|---|---|---|---|
+| 3 | Clara y accionable | Acción + elemento identificado (código, tag o nombre específico) + tarea. Si se elimina o modifica algo, además el porqué. Si se agrega algo sin justificar, la identificación debe ser fuerte | "Falta riesgos: exposición radiación solar, condiciones climáticas adversas, exposición a ruido"; "Los riesgos de atrapamiento… no aplica a la tarea de ajuste" |
+| 2 | Entendible pero incompleta | Identifica el elemento, pero falta la acción, la tarea o el porqué | "Eliminar: CO-ING-4051 Indicación de presión en terreno" (falta el porqué); "CO-ADM-4199" (falta la acción); "Incorporar HTE de toma de muestras" |
+| 1 | Ambigua / genérica | Nombra un tema sin identificar el elemento exacto | "Riesgos asociados a SSO", "Faltan controles", "Cargar pauta inspección", "Mejorar control", "incluir check list" |
+| 0 | No utilizable | Vacío, **lista copiada** (3 o más códigos sin acción) o no permite saber qué se pide | "SSO Y PRODUCCION", "ECO. LYR.", "Similar a plataforma licor", listas CO-ADM-… pegadas |
 
-## 4. Pilar 2: Calidad de los hallazgos (¿se entiende qué se pide?)
+Para evitar premiar frases artificiales, un verbo de acción no basta para llegar a 3. Se detectan cinco elementos:
+- **acción**;
+- **objeto** (riesgo, control, documento, HTE…);
+- **identificación** (términos que no sean genéricos, código o tag);
+- **contexto** (la tarea del RIT o una mencionada en el texto);
+- **justificación**.
 
-La pregunta es: **¿el implementador de SoftExpert sabría qué cambiar sin preguntar?** Cada hallazgo marcado "Sí" (riesgo, control o tarea) recibe una nota:
+El detalle de cada RIT muestra estos elementos (Sí/No) y una **versión sugerida**. La versión sugerida solo usa lo que está en el registro; lo que falta queda entre corchetes.
 
-| Nota | Criterio | Ejemplos reales |
-|---|---|---|
-| 0 | Sin contenido: marca "Sí" pero no escribe nada | (vacío), "s/o" |
-| 1 | No se entiende qué hacer: solo el ámbito, genérico, o **lista pegada** de SoftExpert sin acción | "Controles SSO", "Faltan controles", "SSO Y PRODUCCION", "TODAS LAS MEDIDAS", "Similar a plataforma licor", "incluir check list", "CO-ADM-3360 FTSSO-TA-02 … CO-ADM-3361 …" |
-| 2 | Identifica el elemento, pero no dice qué hacer con él | "CO-ADM-4199", "Falta riesgos. Exposición radiación solar, condiciones climáticas adversas" |
-| 3 | Claro y accionable: **acción + elemento específico**, idealmente con el motivo | "Eliminar: CO-ING-4051 Indicación de presión en terreno", "Falta agregar HTE de actividades específicas de quemadores", "Incluir como control para el riesgo 'Omisión de hallazgos…' la rutina de inspección de operador terreno por área" |
+Formato recomendado (guía, no obligación): **[ACCIÓN] + [ELEMENTO EXACTO] + [TAREA/CONTEXTO] + [POR QUÉ]**.
 
-- Un registro con varios hallazgos toma la **nota más baja**: basta una parte incomprensible para que el implementador tenga que preguntar.
-- Un **hallazgo claro** tiene nota ≥2.
+## 5. Categorías de gestión (equipos, 4 semanas hasta la semana seleccionada)
 
-Formato sugerido para enseñar: **[Agregar / Eliminar / Modificar] + [riesgo, control o documento exacto: código y nombre] + [en la tarea …] + [porque …]**.
+| Categoría | Condición |
+|---|---|
+| Referentes | Adherencia ≥90% y ≥60% de hallazgos entendibles |
+| Constantes, pero requieren mejorar la calidad de sus hallazgos | Adherencia ≥90%, entendibles <60% |
+| Buen desempeño cuando participa, pero requiere constancia | Adherencia <90%, entendibles ≥60% |
+| Requieren apoyo | Adherencia <90%, entendibles <60% |
+| RIT realizado sin hallazgos suficientes para evaluar redacción | Menos de 3 hallazgos. **No es negativo por sí solo** |
+| Sin turno exigido | El turno estuvo en DC o AD todo el período |
 
-Reglas automáticas (`pauta_hallazgo` en `reporte/rit.py`):
-- **Acción**: verbos agregar, eliminar, quitar, incorporar, incluir, crear, modificar, actualizar, especificar, corregir, etc., o expresiones como "falta…", "se debe…", "se requiere…", "no aplica", "no corresponde", "duplicado", "repetido".
-- **Especificidad**: un código de SoftExpert (CO-ADM-…, SSO-…, FTSSO-…, código de tarea), o al menos 2 palabras de contenido con acción (3 sin acción), excluyendo el vocabulario genérico (SSO, MA, PRO, control, riesgo, falta, HTE, procedimiento…).
-- **Lista pegada**: 3 o más códigos sin ninguna acción.
+Alerta adicional ⚠👥 **problema de trazabilidad**: 50% o más de los RIT del equipo vienen de cuentas compartidas.
 
-## 5. Cuadrantes (equipos, últimas 4 semanas)
+## 6. Personas
 
-| Cuadrante | Condición | Qué hacer |
-|---|---|---|
-| Referentes | adherencia ≥90% y hallazgos claros ≥70% | Reconocer y usar como ejemplo |
-| Constantes, pero no se entiende lo que piden | adherencia ≥90%, claridad <70% | Apoyar la redacción con el formato y ejemplos |
-| Claros, pero sin constancia | adherencia <90%, claridad ≥70% | Reforzar la disciplina con el jefe de especialidad o de turno |
-| Registran sin encontrar nada | adherencia ≥70%, 0 hallazgos | Acompañar un RIT y verificar que se abre la tarea y se revisan todos los ámbitos |
-| Requieren apoyo | adherencia baja y hallazgos poco claros o inexistentes | Acompañamiento directo del líder |
-
-Personas: referentes si tienen 3 o más hallazgos y ≥70% claros; requieren acompañamiento si tienen 3 o más hallazgos y <50% claros.
-
-## 6. Top 20 piloto SoftExpert
-
-Es un reporte externo que rankea a los usuarios más idóneos para el piloto de la nueva plataforma. Pondera cantidad, frecuencia y calidad de redacción, con balance Operación/Mantención. El reporte RIT lo cruza para ver **si la calidad de esas personas se sostiene** con la pauta RIT en las últimas 4 semanas. Lecturas posibles: "se sostiene", "claridad media", "bajó la claridad", "activo, sin hallazgos" o "sin actividad".
+- Solo cuentas individuales.
+- Conceptos separados, sin ranking único:
+  - mayor actividad (RIT registrados);
+  - mayor constancia (semanas activas);
+  - mejor redacción (al menos 3 hallazgos, % accionables);
+  - requieren apoyo (al menos 3 hallazgos y 50% o más genéricos o no utilizables).
+- Las cuentas compartidas se listan aparte, como dato del equipo.
+- El **Top 20 del piloto** es una referencia externa. Sus puntajes (cantidad, calidad, frecuencia) se muestran por separado, junto a los indicadores del reporte, sin volver a combinarlos.
 
 ## 7. Cómo comunicar
 
-- **Separar siempre** "hacer el RIT" de "informar bien un hallazgo". Un equipo puede ser excelente en lo primero y débil en lo segundo.
-- **Reconocer con nombre** a los referentes, con su mejor ejemplo textual. Para quienes requieren apoyo, hablar de acompañamiento y mostrar el formato correcto con un ejemplo de su propia área. No es un ranking de culpables.
-- **Dirigir cada foco a quien puede actuar:**
-  - el jefe de especialidad (Mantención) o el jefe de turno (Operación): adherencia y calidad del análisis en su RIT;
-  - el ingeniero o implementador de SoftExpert: listas pegadas y pedidos genéricos que no puede implementar.
-- Cita los equipos con área y nombre (por ejemplo, "Efluentes · Turno C") y los levantamientos por ID.
-- Con pocos registros por equipo, como los turnos de Operación (unos 3 por semana), no saques conclusiones de una sola semana: usa los cuadrantes de 4 semanas y la tendencia de 8.
-- No mencionar confirmaciones TBH. No evaluar el cierre de las mejoras.
+- Usa el patrón **Problema → Dónde → Evidencia → Causa probable → Acción sugerida**. Si los datos no determinan la causa, escribe "Posible causa / requiere revisión".
+- El orden de lectura es: **dato → tendencia → contexto → semáforo**. Nunca uses solo el color, y siempre da n/N.
+- No sobrerreacciones a una semana: usa la tendencia y la persistencia de 4 semanas.
+- No incentives hallazgos artificiales: un RIT sin hallazgo es válido.
+- Dirige cada foco a quien puede actuar:
+  - el jefe de turno o de especialidad: adherencia y calidad del análisis;
+  - quien administra las cuentas: trazabilidad;
+  - el ingeniero o implementador: listas copiadas y pedidos genéricos.
+- No menciones confirmaciones TBH.
+
+## 8. No disponible con los datos actuales
+
+- Si la tarea revisada es la correcta para el área. Requiere el maestro de tareas: el prefijo del código se repite entre macroprocesos (Planta Térmica y Madera usan "A").
+- Los riesgos, controles y documentos asociados a la tarea en SoftExpert.
+- La pertinencia técnica. La estructura está lista en `config/validacion_tecnica.csv`.
+- Si la mejora fue aceptada, rechazada o corregida, su fecha de cierre y si se implementó de verdad.
+- La adherencia individual.
+- Quién lideró el RIT cuando se usó una cuenta compartida.
+- La rotación antes de abril y después de diciembre de 2026.

@@ -1,0 +1,62 @@
+
+/* ===== Reporte RIT: complementos a estilos_base.css / estilos_reporte.css ===== */
+.filterbar{position:sticky;top:0;z-index:40}
+.filterbar-in{gap:8px}.f select,.f .txt-input{min-width:110px;max-width:190px}
+.semnav{display:flex;gap:4px;align-items:center}.semnav .btn{padding:6px 9px}
+.chips{padding-top:6px}.chip.flt{background:var(--azulBg);color:var(--azul)}
+section{scroll-margin-top:120px}
+.clic{cursor:pointer}tr.clic:hover td{background:var(--azulBg)}
+.chip.gray{background:#F0EFEC;color:var(--grisC)}
+/* KPI de gestión: dato → n/N → tendencia → contexto → estado (el color nunca va solo) */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+.kg{padding:14px 16px;border-top:4px solid var(--grisC)}
+.kg .kq{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--grisC);font-weight:700}
+.kg .kt{font-size:13px;font-weight:700;color:var(--gris);margin:2px 0 8px}
+.kg .kv{font-size:26px;font-weight:800;line-height:1.1}.kg .kv small{font-size:13px;font-weight:600;color:var(--grisC);margin-left:6px}
+.kg .kn{font-size:12px;color:var(--txt);margin-top:2px}
+.kg .kd{font-size:11.5px;margin-top:6px}.kg .ke{font-size:11.5px;margin-top:3px;font-weight:600}
+.kg ul{margin:8px 0 0;padding:8px 0 0;border-top:1px solid var(--linea);list-style:none;font-size:11.5px}.kg ul li{display:flex;justify-content:space-between;gap:6px;padding:1px 0}
+.kg ul li span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.k-ok{border-top-color:var(--ok)}.k-amb{border-top-color:var(--naranja)}.k-red{border-top-color:var(--rojo)}.k-az{border-top-color:var(--azul)}
+.est-ok{color:var(--ok)}.est-amb{color:var(--ambar)}.est-red{color:var(--rojo)}.est-na{color:var(--grisC)}
+.up{color:var(--ok)}.down{color:var(--rojo)}.flat{color:var(--grisC)}
+.mr{display:inline-block;font-size:9.5px;font-weight:700;background:#F0EFEC;color:var(--grisC);border-radius:4px;padding:1px 5px;margin-left:4px;letter-spacing:.02em;vertical-align:middle}
+/* distribución de redacción (barra apilada con etiquetas) */
+.dist{display:flex;height:16px;border-radius:5px;overflow:hidden;margin:8px 0 4px;gap:2px}.dist i{display:block;height:100%}
+.r3{background:var(--ok)}.r2{background:#8DBF5A}.r1{background:var(--naranja)}.r0{background:var(--rojo)}.rs{background:#D9D4CB}
+.leg{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--txt)}.leg span{display:flex;gap:5px;align-items:center}.leg i{width:9px;height:9px;border-radius:2px;display:inline-block}
+/* diagnóstico: problema → dónde → evidencia → causa → acción */
+.diag{display:grid;gap:10px}.dg{padding:12px 14px;border-left:5px solid var(--naranja)}.dg.info{border-left-color:var(--azul)}.dg.red{border-left-color:var(--rojo)}
+.dg h4{margin:0 0 6px;font-size:13.5px}.dg dl{display:grid;grid-template-columns:150px 1fr;gap:3px 10px;margin:0;font-size:12.5px}
+.dg dt{color:var(--grisC);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding-top:2px}.dg dd{margin:0}
+/* tablas jerárquicas */
+table.jer td.n0{font-weight:700}table.jer td.n1{padding-left:22px}table.jer td.n2{padding-left:40px}
+table.jer tr.g0 td{background:var(--bg2)}
+.tog{display:inline-block;width:14px;color:var(--grisC);font-size:10px}
+.mini{display:inline-flex;align-items:flex-end;gap:2px;height:22px;vertical-align:middle}.mini i{display:block;width:8px;border-radius:2px;background:var(--grisC)}
+.mini i.ok{background:var(--ok)}.mini i.amb{background:var(--naranja)}.mini i.red{background:var(--rojo)}.mini i.na{background:var(--linea);height:3px!important}
+td small,.sm{color:var(--grisC);font-size:10.5px}
+.bar{display:inline-block;height:6px;border-radius:3px;background:var(--linea);width:60px;vertical-align:middle;margin-left:6px;position:relative;overflow:hidden}.bar b{position:absolute;left:0;top:0;bottom:0;background:var(--gris)}
+/* categorías */
+.cuad{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.cq{border-top:4px solid var(--grisC)}.cq-ok{border-top-color:var(--ok)}.cq-amb{border-top-color:var(--naranja)}.cq-red{border-top-color:var(--rojo)}.cq-az{border-top-color:var(--azul)}
+.cq .chip{margin:0 4px 5px 0}
+/* ejemplos */
+.ej3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.ej{padding:8px 0;border-bottom:1px solid var(--linea);font-size:12px}.ej:last-child{border-bottom:none}
+.ej .q{font-size:12.5px;margin:3px 0}.ej .sg{background:var(--okBg);border-radius:6px;padding:5px 8px;margin-top:4px;font-size:11.5px}
+.formato{background:var(--azulBg);border:1px solid #D4E2EA;border-radius:9px;padding:12px 14px;font-size:12.5px;margin-top:12px}
+.formato code{background:#fff}
+/* modal */
+.modal{max-width:980px}.modal h4{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gris);margin:16px 0 6px;border-bottom:1px solid var(--linea);padding-bottom:4px}
+.modal .txt{background:var(--bg2);border:1px solid var(--linea);border-radius:8px;padding:10px 12px;font-size:13px;white-space:pre-wrap;margin-top:6px}
+.modal table.kv td:first-child{color:var(--grisC);width:210px}
+.el{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.el span{font-size:11px;border-radius:5px;padding:2px 7px;border:1px solid var(--linea)}
+.el .si{background:var(--okBg);color:var(--ok);border-color:#CFE5D1}.el .no{background:#F7F5F1;color:var(--grisC)}
+.alerta{background:var(--ambarBg);border-radius:8px;padding:8px 12px;font-size:12.5px;margin:6px 0}
+.pag{display:flex;gap:6px;align-items:center;justify-content:flex-end;padding:8px 10px;font-size:12px}
+details.def{background:var(--blanco);border:1px solid var(--linea);border-radius:10px;padding:12px 16px;margin-top:10px}
+details.def summary{cursor:pointer;font-weight:700;color:var(--gris)}details.def h4{margin:14px 0 4px;font-size:12.5px}
+details.def table td,details.def table th{font-size:12px;white-space:normal}
+.na-box{color:var(--grisC);font-style:italic}
+@media print{.filterbar,.detail-nav,.modal-bg{display:none!important}.card{break-inside:avoid}}

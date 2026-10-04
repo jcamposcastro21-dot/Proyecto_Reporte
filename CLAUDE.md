@@ -4,14 +4,15 @@ Este proyecto genera un reporte HTML diario sobre la **calidad** de las investig
 
 Hay dos reportes, cada uno con su skill:
 - **RdP diario por NAT**: skill `reporte-diario-rdp` (`python3 -m reporte.diario`).
-- **RIT semanal** (levantamientos de las Reuniones de Inicio de Turno en SoftExpert), por área, especialidad, equipo y persona: skill `reporte-semanal-rit` (`python3 -m reporte.rit`). Separa la adherencia a la práctica de la calidad de los hallazgos y no evalúa el cierre.
+- **RIT** (levantamientos de las Reuniones de Inicio de Turno en SoftExpert): skill `reporte-semanal-rit` (`python3 -m reporte.rit`). Herramienta de consulta con 5 niveles separados (adherencia, ejecución/trazabilidad, redacción, pertinencia técnica, efectividad), filtros que recalculan todo en el navegador y validación en `pruebas/validar_rit.py`.
 
 ## Ejecutar
 
 ```
 pip install -r requirements.txt
 python3 -m reporte.diario --planta "Nueva Aldea" --fecha 2026-10-02 --json
-python3 -m reporte.rit --planta "Nueva Aldea" --semana 39 --json   # un HTML con todas las semanas + evolución
+python3 -m reporte.rit --planta "Nueva Aldea" --json                  # HTML autónomo con todos los RIT evaluados
+python3 pruebas/validar_rit.py out/RIT_semanal_Nueva_Aldea.html        # validación lógica (requiere playwright)
 ```
 
 ## Estructura
@@ -21,8 +22,12 @@ python3 -m reporte.rit --planta "Nueva Aldea" --semana 39 --json   # un HTML con
 | `reporte/fuente.py` | Carga de datos: Excel hoy; `cargar_qvd` / `cargar_sql` listos para la base de los QVD. Contrato de columnas. |
 | `reporte/calidad.py` | Reglas: título, causa, tipo de acción S/C/R, recurrencias |
 | `reporte/diario.py` | Cálculo "a la fecha", focos automáticos, HTML y JSON |
-| `reporte/rit.py` | Reporte RIT: carga de la lista InicioTurno_SE, pauta 0–3 de hallazgos, adherencia, cuadrantes, personas, cruce con el Top 20; un HTML con todas las semanas (numeración ISO) y la evolución global de los KPI |
-| `config/rit.json` | Parámetros RIT: feriados, umbrales, aproximación fuera del calendario |
+| `reporte/rit.py` | Reporte RIT: carga, evaluación automática de redacción 0–3, días exigidos por equipo y semana; arma los datos del HTML (definiciones de KPI en el docstring) |
+| `reporte/plantillas/rit_app.*` | HTML, CSS y JS del reporte RIT: cálculo de indicadores con filtros, secciones por nivel, detalle |
+| `config/cuentas_compartidas.csv` | Cuentas genéricas (correos ce05.*): RIT no atribuibles a una persona |
+| `config/validacion_tecnica.csv` | Validación humana de pertinencia técnica por hallazgo (vacío hoy) |
+| `pruebas/validar_rit.py` | Validación lógica del HTML RIT (porcentajes, sumas, filtros, trazabilidad, ejemplos) |
+| `config/rit.json` | Parámetros RIT: metas, umbrales de categorías, muestra mínima, semana de inicio, feriados |
 | `config/rotacion_turnos.csv` | Rotación de turnos de Operación (fecha, turno A–E, código D/N/DC/AD), abr–dic 2026; define los días en que se exige el RIT |
 | `config/clasificacion_acciones.csv` | Clasificación manual de acciones S/C/R; prevalece sobre la automática |
 | `config/pauta_eventos.csv` | Corrección manual de la pauta 0–3 por evento |

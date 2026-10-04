@@ -1,69 +1,87 @@
 ---
 name: reporte-semanal-rit
-description: Genera la evaluación semanal de la calidad de los levantamientos de las Reuniones de Inicio de Turno (RIT) registrados en SoftExpert, por área, especialidad, equipo y persona, para una planta del Negocio Celulosa. Separa la adherencia a la práctica (hacer y registrar el RIT) de la calidad de los hallazgos informados (si se entiende qué riesgo, control o tarea cambiar), e identifica equipos y personas referentes y los que requieren apoyo, cruzando con el Top 20 de usuarios SoftExpert. Úsala cuando el usuario pida el reporte RIT, la evaluación de inicios de turno, la calidad de levantamientos en SoftExpert o quién necesita apoyo en el RIT.
+description: Genera el reporte de gestión de los levantamientos de las Reuniones de Inicio de Turno (RIT) registrados en SoftExpert para una planta del Negocio Celulosa. Separa cinco niveles sin combinarlos en un puntaje único (1 adherencia, 2 ejecución y trazabilidad, 3 redacción del hallazgo, 4 pertinencia técnica, 5 efectividad), con filtros que recalculan todo, recorrido semana a semana, diagnóstico problema → evidencia → causa → acción, categorías por equipo, análisis por persona y ejemplos reales. Úsala cuando el usuario pida el reporte RIT, la evaluación de inicios de turno, la calidad de levantamientos en SoftExpert o quién necesita apoyo en el RIT.
 ---
 
-# Reporte semanal de calidad de levantamientos RIT
+# Reporte RIT: herramienta de gestión de los levantamientos en SoftExpert
 
-El objetivo es responder cada semana si **se hace el RIT** y si **lo que se levanta sirve**, es decir, si un implementador entiende qué cambiar en SoftExpert sin tener que preguntar. Son dos preguntas distintas y no se mezclan: una cosa es la adherencia a la práctica y otra es informar hallazgos. **El cierre de las mejoras no se evalúa.**
+El reporte responde cuatro preguntas, cada una por separado:
 
-Antes de redactar, lee `references/criterios_rit.md`. Contiene:
-- la ficha de instancia del RIT de Mantención;
-- lo que dice el playbook;
-- la pauta 0–3 de hallazgos;
-- los cuadrantes;
-- cómo comunicar los resultados.
+1. ¿Se realiza el RIT cuando corresponde? → **nivel 1, adherencia**.
+2. ¿Se ejecuta correctamente y es trazable? → **nivel 2, ejecución y trazabilidad**.
+3. Cuando hay un hallazgo, ¿está bien redactado? → **nivel 3, evaluación automática de redacción 0–3**.
+4. ¿El hallazgo sirve? → **nivel 4, pertinencia técnica** (pendiente de validación humana) y **nivel 5, efectividad** (solo lo que permiten los datos).
+
+Reglas que no se rompen:
+- **Sin puntaje único.** Cada indicador se muestra como % + n/N.
+- **La redacción no es la pertinencia técnica.**
+- **Un RIT sin hallazgo no es un mal RIT.**
+- **Las cuentas compartidas son un problema de trazabilidad.** No se le atribuyen a ninguna persona.
+- **No se inventan datos.** Lo no disponible se dice.
+- El reporte es solo de **consulta**: no modifica SoftExpert ni el Excel.
+
+Antes de redactar, lee `references/criterios_rit.md`: la ficha de instancia, el playbook, las definiciones, la pauta, las categorías y cómo comunicar.
 
 ## Flujo
 
-1. **Datos**, ambos en `data/` y fuera del repo porque contienen nombres y correos:
-   - `data/RIT_*.xlsx`: exportación de la lista `InicioTurno_SE` de SoftExpert. Se usa el más reciente.
-   - `data/Top_usuarios*.html`: reporte Top 20 de usuarios SoftExpert por planta. Es opcional.
+1. **Datos**, todos en `data/` y fuera del repo porque contienen nombres y correos:
+   - `data/RIT_*.xlsx`: exportación de la lista `InicioTurno_SE`. Se usa el más reciente.
+   - `data/Top_usuarios*.html`: ranking del piloto (opcional).
 
-   Si faltan, pídelos al usuario.
+   Configuración versionada:
+   - `config/rotacion_turnos.csv` (D/N/DC/AD por turno)
+   - `config/cuentas_compartidas.csv` (correos genéricos)
+   - `config/rit.json` (metas, umbrales, feriados, semana de inicio)
+   - `config/validacion_tecnica.csv` (validaciones de pertinencia; hoy vacío)
 2. **Generar** (requiere `pip install -r requirements.txt`):
    ```
-   python3 -m reporte.rit --planta "Nueva Aldea" --semana 39 --json
+   python3 -m reporte.rit --planta "Nueva Aldea" [--semana 39] [--json] [--comentarios comentarios/rit.json]
    ```
-   Se genera **un solo HTML** (`out/RIT_semanal_<planta>.html`) con **todas las semanas**, desde la primera con registros hasta la última de la base. Las semanas usan la numeración ISO, de lunes a domingo (la semana 39 de 2026 va del 21 al 27 de septiembre). La última semana se marca "parcial" si la base no llega al domingo.
-   - `--semana` define la semana que se abre por defecto. Acepta el número ISO o cualquier fecha; si se omite, abre la última semana completa.
-   - `--json` genera `out/RIT_semanal_<planta>_S<n>.json` con el detalle de esa semana y la evolución semanal de la planta y de cada área.
+   Se genera un solo HTML autónomo, `out/RIT_semanal_<planta>.html`, con todos los RIT evaluados. Los indicadores se calculan en el navegador, así que los filtros recalculan todo. Las semanas usan la numeración ISO. Abre en la última semana completa, salvo que se indique `--semana`. `--json` guarda los datos evaluados en `out/RIT_datos_<planta>.json`.
+3. **Validar**:
+   ```
+   python3 pruebas/validar_rit.py out/RIT_semanal_<planta>.html
+   ```
+   Comprueba que los % coincidan con n/N, las sumas por semana, equipo y especialidad, el efecto de los filtros, que las cuentas compartidas queden fuera de los rankings, que un RIT sin hallazgo no caiga en "Requieren apoyo", la muestra reducida, que los ejemplos sean reales y que el drill-down coincida. Todo debe dar `OK`.
+4. **Revisar con criterio** lo automático:
+   - Lee hallazgos con nota 1 y 3: ¿un implementador sabría qué cambiar? Si una regla falla de forma sistemática, ajusta `pauta_redaccion` en `reporte/rit.py` y documenta el cambio.
+   - En los equipos "sin hallazgos suficientes", mira las tareas revisadas antes de concluir nada.
+   - Si alguien valida la pertinencia técnica, regístrala en `config/validacion_tecnica.csv`.
+5. **Redactar** (opcional) `comentarios/rit.json`: `{"S39": {"Planta": {"lectura": "...", "focos": ["..."]}}}`. Aparece en el resumen y en el diagnóstico de esa semana.
+6. **Entregar** el HTML y resumir en 3–5 líneas: qué ocurre, dónde, evidencia y acción.
 
-   Los números salen siempre del script. Todas las semanas se calculan con las mismas reglas: cada equipo entra al cálculo de adherencia desde su primera semana con registro y sigue contando después, aunque deje de registrar.
-3. **Revisar con criterio:**
-   - **Pauta de hallazgos**: la nota es automática, por reglas de texto. Lee los hallazgos con nota 1 y 3 de la semana y confirma que el criterio se sostiene: "¿un implementador sabría qué cambiar?". Si una regla se equivoca de forma sistemática, ajústala en `pauta_hallazgo` de `reporte/rit.py` y documenta el cambio en `references/criterios_rit.md`.
-   - **Equipos "registran sin encontrar nada"**: no es malo por sí solo, pero si dura varias semanas sugiere un registro por cumplir. Míralo junto con las tareas revisadas: ¿siempre la misma tarea? ¿Tareas rutinarias de bajo riesgo?
-   - **Cuentas compartidas** ("Operador …"): impiden saber quién redacta. Repórtalo como brecha de práctica, no como problema de una persona.
-4. **Redactar** `comentarios/rit.json`, con una clave por semana: `{"S39": {"Planta": {...}, "Efluentes": {...}}}`. Dentro de cada semana, las claves son `"Planta"` o el nombre exacto del área, y cada una acepta `lectura` (2–3 líneas) y `focos` (máximo 4). Al redactar, usa la vista de evolución para decir si un cambio es tendencia o una semana aislada. Sigue las reglas de comunicación de la referencia.
-5. **Regenerar** con `--comentarios comentarios/rit.json`, entregar el HTML y resumir en el chat, en 3–5 líneas, qué equipos y personas necesitan apoyo y quiénes son referentes.
+## Estructura del HTML
 
-## Qué incluye el HTML
+- **Filtros**:
+  - semana (◀ ▶) y período (semana o 4 semanas);
+  - especialidad, área, equipo y turno;
+  - persona, tarea, hallazgo, redacción, estado de la mejora y tipo de cuenta.
 
-Hay dos selectores: **Semana** (con ◀ ▶ para avanzar o retroceder, más la opción "📈 Evolución global") y **Área** (planta completa o cada área).
+  La adherencia y las categorías solo aplican con filtros de equipo.
+- **Secciones**, en orden:
+  1. Resumen ejecutivo: 6 tarjetas (adherencia, trazabilidad, ejecución, redacción, pertinencia y efectividad), cada una con dato, n/N, comparación con las 4 semanas anteriores y estado.
+  2. Diagnóstico: problema → dónde → evidencia → causa probable → acción sugerida.
+  3. Tendencia de las últimas 4 semanas completas, con persistencia.
+  4. Nivel 1: tabla Especialidad → Área → Equipo.
+  5. Nivel 2: tabla de ejecución y trazabilidad, con el detalle de cuentas compartidas.
+  6. Nivel 3: distribución de la redacción y tabla por equipo, más ejemplos buenos, para mejorar y deficientes, con su versión sugerida.
+  7. Niveles 4–5: pertinencia y efectividad.
+  8. Categorías de gestión por equipo (adherencia × hallazgos entendibles, con la alerta de trazabilidad).
+  9. Personas: actividad, constancia, mejor redacción y requiere apoyo, más el Top 20 como referencia separada.
+  10. Registros.
+  11. Histórico S6–S40.
+  12. Definiciones.
+- **Detalle**:
+  - RIT: fecha, turno según el calendario, cuenta, tarea, ejecución, cada hallazgo con su redacción, los elementos detectados, cómo mejorarlo y la pertinencia.
+  - Persona: identificación, adherencia del equipo, trazabilidad, ejecución, redacción, ejemplos y alertas.
+  - Equipo: lo mismo a nivel de equipo.
 
-**Vista de una semana**:
-1. La semana en números, con la variación respecto de la semana anterior.
-2. Foco de la semana.
-3. Cuadrantes adherencia × claridad por equipo, en las 4 semanas que terminan en la seleccionada: referentes; constantes pero poco claros; claros pero sin constancia; registran sin encontrar nada; requieren apoyo.
-4. Tabla por área, especialidad y equipo, con la tendencia de adherencia de 8 semanas. En la vista planta llega hasta especialidad; en la de área, hasta cada equipo.
-5. Personas en 4 semanas: referentes y quienes requieren acompañamiento.
-6. Ejemplos de la semana.
-7. Top 20 piloto SoftExpert (solo en la vista planta).
+## Parámetros (`config/rit.json`)
 
-**Evolución global**, para la planta o el área seleccionada:
-- Tarjetas de la última semana completa contra el promedio de las 4 anteriores, y la mejor semana.
-- Una línea por KPI: adherencia, hallazgos claros, registros con hallazgo, registro oportuno y tarea SE. Todas usan escala 0–100% y llevan la meta punteada. Los puntos huecos son semanas con menos de 20 registros.
-- Mapa de calor semana × área / especialidad / equipo, uno para adherencia y otro para hallazgos claros.
-- Tabla semanal con todos los KPI.
+- `metas`: la adherencia (90) es la meta de la planta; trazabilidad, ejecución y redacción accionable son referencias de trabajo.
+- `categorias`: umbrales de adherencia alta (90) y calidad alta (60% entendibles), mínimo de hallazgos (3) y alerta de trazabilidad (50% de cuenta compartida).
+- `muestra_minima`: 5.
+- `inicio_general_semana`: `null` = automática (S26).
+- `feriados` y `operacion_dias_por_dia` (solo fuera del calendario de turnos).
 
-Al hacer clic en una semana (punto, columna o fila), se abre esa semana. Al hacer clic en un equipo, una persona o un ejemplo, se abren sus levantamientos de las 4 semanas de la semana elegida (en la vista de evolución, de todo el período). Al hacer clic en un levantamiento, se abre su detalle con la nota de cada hallazgo y "cómo mejorarlo".
-
-## Parámetros
-
-Están en `config/rit.json`:
-- días esperados de Operación: se toman de `config/rotacion_turnos.csv` (fecha, turno, código D/N/DC/AD). Cuando llegue la rotación de 2027, agrégala a ese archivo. Fuera del calendario se usa `operacion_dias_por_dia` (0,4);
-- feriados;
-- umbrales `[verde, ámbar]` de adherencia, registro oportuno, tarea SE y claridad;
-- mínimo de hallazgos para evaluar a una persona.
-
-
+Cuando llegue la rotación de 2027, agrégala a `config/rotacion_turnos.csv`.

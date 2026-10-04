@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RIT — calidad de levantamientos · {{PLANTA}}</title>
+<style>/*CSS*/</style></head>
+<body>
+<!--
+  REPORTE RIT — herramienta de CONSULTA (no modifica SoftExpert ni el Excel).
+  Todos los indicadores se calculan en este archivo a partir de los registros embebidos (objeto D),
+  generados por reporte/rit.py. Definiciones de KPI: ver la sección "Definiciones" al final de la página
+  y los comentarios al inicio de reporte/plantillas/rit_app.js.
+-->
+<header><div class="hd"><div class="hd-left"><div><h1>Calidad de levantamientos RIT</h1>
+<div class="sub">Reunión de Inicio de Turno · SoftExpert — ¿se realiza?, ¿queda trazable?, ¿el hallazgo se entiende?, ¿sirve?</div>
+<div class="plt">Negocio Celulosa — Planta {{PLANTA}}</div></div></div>
+<div class="hd-right"><div class="hd-meta" id="hdMeta"></div></div></div></header>
+
+<div class="filterbar" id="filtros"><div class="filterbar-in">
+ <div class="f"><label>Semana</label><div class="semnav"><button class="btn" id="semPrev" title="Semana anterior">◀</button><select id="fSem"></select><button class="btn" id="semNext" title="Semana siguiente">▶</button></div></div>
+ <div class="f"><label>Período</label><select id="fPer"><option value="sem">Semana seleccionada</option><option value="4s">4 semanas hasta la seleccionada</option></select></div>
+ <div class="f"><label>Especialidad</label><select id="fEsp"></select></div>
+ <div class="f"><label>Área</label><select id="fArea"></select></div>
+ <div class="f"><label>Equipo</label><select id="fEq"></select></div>
+ <div class="f"><label>Turno</label><select id="fTurno"><option value="">Todos</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></div>
+ <div class="f"><label>Persona / cuenta</label><input class="txt-input" id="fPer2" list="lPersonas" placeholder="Todas"><datalist id="lPersonas"></datalist></div>
+ <div class="f"><label>Tarea</label><input class="txt-input" id="fTarea" placeholder="Código o texto"></div>
+ <div class="f"><label>Hallazgo</label><select id="fHall"><option value="">Todos</option><option value="con">Con hallazgo</option><option value="sin">Sin hallazgo</option></select></div>
+ <div class="f"><label>Redacción</label><select id="fRed"><option value="">Todas</option><option value="3">3 · Clara y accionable</option><option value="2">2 · Entendible incompleta</option><option value="1">1 · Ambigua / genérica</option><option value="0">0 · No utilizable</option><option value="lista">Lista copiada</option></select></div>
+ <div class="f"><label>Estado mejora</label><select id="fEst"><option value="">Todos</option><option>Abierta</option><option>Cerrada</option><option>No Aplica</option></select></div>
+ <div class="f"><label>Cuenta</label><select id="fCta"><option value="">Todas</option><option value="ind">Individual</option><option value="comp">Compartida</option></select></div>
+ <button class="btn" id="fLimpiar">Limpiar filtros</button>
+ <button class="btn" onclick="window.print()" style="margin-left:auto">🖨 Imprimir / PDF</button>
+</div><div class="chips" id="chipsFiltro"></div></div>
+
+<div class="wrap" id="app">
+ <nav class="detail-nav" id="nav" style="margin-top:16px">
+  <a href="#s-resumen">Resumen</a><a href="#s-diag">Diagnóstico</a><a href="#s-tend">Tendencia</a><a href="#s-n1">1 · Adherencia</a>
+  <a href="#s-n2">2 · Ejecución y trazabilidad</a><a href="#s-n3">3 · Redacción</a><a href="#s-n45">4–5 · Pertinencia y efectividad</a>
+  <a href="#s-cat">Categorías</a><a href="#s-per">Personas</a><a href="#s-reg">Registros</a><a href="#s-hist">Histórico</a><a href="#s-def">Definiciones</a>
+ </nav>
+ <div id="contexto" class="section-sub"></div>
+ <section id="s-resumen"></section>
+ <section id="s-diag"></section>
+ <section id="s-tend"></section>
+ <section id="s-n1"></section>
+ <section id="s-n2"></section>
+ <section id="s-n3"></section>
+ <section id="s-n45"></section>
+ <section id="s-cat"></section>
+ <section id="s-per"></section>
+ <section id="s-reg"></section>
+ <section id="s-hist"></section>
+ <section id="s-def"></section>
+ <div class="foot-note" id="pie"></div>
+</div>
+<div class="modal-bg" id="modal"><div class="card modal" id="modalBox"></div></div>
+<script>const D=/*DATOS*/;</script>
+<script>/*JS*/</script>
+</body></html>
