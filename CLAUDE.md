@@ -1,6 +1,6 @@
 # Reporte diario de calidad RdP por NAT — Negocio Celulosa
 
-Este proyecto genera un reporte HTML diario sobre la **calidad** de las investigaciones de Resolución de Problemas (RdP) por NAT, con los criterios del Playbook MGO (oct-2025). El proyecto y todas sus salidas están en español. Las confirmaciones TBH quedan fuera del alcance: el reporte TBH se usó solo como referencia de formato visual.
+Este proyecto genera un reporte HTML diario sobre la **calidad** de las investigaciones de Resolución de Problemas (RdP) por NAT. Mantiene el formato del Reporte de Calidad RdP ago-sep 2026 (vista planta + radiografía por NAT) y lo complementa con los criterios del Playbook MGO (oct-2025) y del Diagnóstico RDP (pauta 0–3, línea base, metas y recurrencias). El proyecto y todas sus salidas están en español. Las confirmaciones TBH quedan fuera del alcance: el reporte TBH se usó solo como referencia de formato visual.
 
 Para generar o redactar un reporte, usa la skill `reporte-diario-rdp` (`.claude/skills/reporte-diario-rdp/`).
 
@@ -18,7 +18,11 @@ python3 -m reporte.diario --planta "Nueva Aldea" --fecha 2026-10-02 --json
 | `reporte/fuente.py` | Carga de datos: Excel hoy; `cargar_qvd` / `cargar_sql` listos para la base de los QVD. Contrato de columnas. |
 | `reporte/calidad.py` | Reglas: título, causa, tipo de acción S/C/R, recurrencias |
 | `reporte/diario.py` | Cálculo "a la fecha", focos automáticos, HTML y JSON |
-| `config/clasificacion_acciones.csv` | Clasificación manual de acciones; prevalece sobre la automática |
+| `config/clasificacion_acciones.csv` | Clasificación manual de acciones S/C/R; prevalece sobre la automática |
+| `config/pauta_eventos.csv` | Corrección manual de la pauta 0–3 por evento |
+| `config/linea_base.json` | Período de línea base, metas del Diagnóstico y valores de la lectura manual |
+| `config/casos_seguimiento.json` | Recurrencias y casos críticos del Diagnóstico, con acciones clave y palabras clave |
+| `config/medidas_control.json` | Conclusión y medidas de control por NAT (caso / control que faltó / medida / verificación) |
 | `comentarios/` | Focos y lectura redactados por día (JSON); `ejemplo.json` muestra el formato |
 | `ref/estilos_*.css` | Diseño (paleta gris/verde/naranja/madera) |
 | `data/`, `out/` | Excel de entrada y reportes generados. **No se versionan**: el repo es público y contienen nombres. |

@@ -1,0 +1,18 @@
+{
+ "_nota": "Línea base y metas del Diagnóstico RDP Nueva Aldea ago-sep 2026. El reporte recalcula la línea base con las mismas reglas automáticas sobre 'periodo'; 'diagnostico_manual' son los valores de la lectura manual del diagnóstico (referencia, no comparables 1:1 con la regla automática).",
+ "Nueva Aldea": {
+  "periodo": {"desde": "2026-08-01", "hasta": "2026-09-30"},
+  "metas": {
+   "pNul":    {"valor": 5,   "sentido": "max", "plazo": "30 días", "texto": "Títulos nulos 28% → <5%"},
+   "pCausal": {"valor": 75,  "sentido": "min", "plazo": "60 días", "texto": "Análisis causal adecuado 58% → ≥75%"},
+   "pSinS":   {"valor": 20,  "sentido": "max", "plazo": "60 días", "texto": "RdP solo correctivas o revisión 42% → ≤20%"},
+   "pTercero":{"valor": 50,  "sentido": "min", "plazo": "90 días", "texto": "Cierre por tercero en acciones de recurrencias y eventos críticos"},
+   "pPlazo":  {"valor": 80,  "sentido": "min", "plazo": "—",       "texto": "Acciones en plazo ≥80%"},
+   "pS":      {"valor": 40,  "sentido": "min", "plazo": "—",       "texto": "Acciones sistémicas ≥40%"}
+  },
+  "diagnostico_manual": {
+   "Nueva Aldea": {"eventos": 39, "finalizadas": 36, "titulo_nulo": "10/36 (28%)", "causal_adecuado": "21/36 (58%)", "puntaje_causal": 1.67, "causa_sistemica": "5/36 (14%)", "causa_como_tarea": "3/36 (8%)", "causa_hipotetica": "5/36 (14%)", "solo_correctivas_revision": "15/36 (42%)", "cadena_coherente": "3/36 (8%)", "verificacion": "3/36 (8%)", "atrasadas_sobre_abiertas": "7/45 (16%)", "autocierre": "69/75 (92%)", "sar": "20/36 (56%)", "lluvia_de_ideas": "26/36 (72%)", "cinco_porques": "4/36 (11%)"},
+   "Resto del negocio": {"eventos": 278, "finalizadas": 262, "titulo_nulo": "80/262 (31%)", "causal_adecuado": "198/262 (76%)", "puntaje_causal": 1.88, "causa_sistemica": "56/262 (21%)", "causa_como_tarea": "1/262 (0,4%)", "causa_hipotetica": "14/262 (5%)", "solo_correctivas_revision": "54/262 (21%)", "cadena_coherente": "23/262 (9%)", "verificacion": "27/262 (10%)", "atrasadas_sobre_abiertas": "65/272 (24%)", "autocierre": "385/418 (92%)", "sar": "154/262 (59%)", "lluvia_de_ideas": "38%", "cinco_porques": "52%"}
+  }
+ }
+}

@@ -1,0 +1,343 @@
+{
+ "Madera": {
+  "planta": "Nueva Aldea",
+  "conclusion": "El equipo se repara y la causa se delega al proveedor: en la entrada a descortezador y astillador nadie en planta es dueño del modo de falla, por eso se repite. Además, roca, arena y madera rajada llegan a los equipos sin ninguna barrera aguas arriba.",
+  "medidas": [
+   {
+    "caso": "<code>12746</code> / <code>11735</code> transportadores de entrada",
+    "eventos": [
+     12746,
+     11735
+    ],
+    "control_que_falto": "No hay inspección con criterio de aceptación para sprockets, módulos y cadena; el levantamiento depende de Andritz.",
+    "medida": "ACR único con dueño en Mantención Madera. Ruta de inspección periódica con criterio de reemplazo (desgaste de sprocket, apriete de módulos) cargada al plan, y sprocket como repuesto crítico en stock.",
+    "verificacion": "90 días sin detención por rotura o soltura en ambos transportadores; cumplimiento de la ruta ≥ 90%.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>9568</code> compuertas de entrada al astillador",
+    "eventos": [
+     9568
+    ],
+    "control_que_falto": "El soporte del sensor es débil por diseño y la acción anterior se cerró después del nuevo evento.",
+    "medida": "Rediseñar el soporte del sensor y extenderlo a L2 y L3; incluir compuertas y sensores en el plan preventivo. La acción no se cierra hasta probarla en operación.",
+    "verificacion": "Sensor operativo confirmado en inspección a 30 y 60 días.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>11695</code> / <code>10619</code> / <code>12767</code> elementos extraños",
+    "eventos": [
+     11695,
+     10619,
+     12767
+    ],
+    "control_que_falto": "No existe detección ni criterio de recepción para roca y arena en la madera.",
+    "medida": "Estándar de recepción con registro de eventos por proveedor y retroalimentación formal a faenas forestales; concretar la detección con detención automática de línea (videoanalítica, hoy solo en factibilidad).",
+    "verificacion": "Eventos por elemento extraño por mes, con tendencia a la baja en un trimestre.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   }
+  ]
+ },
+ "Máquina": {
+  "planta": "Nueva Aldea",
+  "conclusion": "La vida del paño PU se gestiona por calendario (90 días) y no por condición: cuando falla antes, se cambia y se consulta al proveedor. La acción que ataca el mecanismo (Uhlebox) espera una parada y no tiene ningún control interino, así que el riesgo sigue intacto hasta la P/A.",
+  "medidas": [
+   {
+    "caso": "<code>11702</code> / <code>11671</code> paño PU 2ª prensa",
+    "eventos": [
+     11702,
+     11671
+    ],
+    "control_que_falto": "No hay variable de condición ni gatillo de cambio anticipado; la acción de fondo no tiene medida interina.",
+    "medida": "Control interino hasta la P/A: inspección por turno de napa y acumulación de fibra en el Uhlebox doble, seguimiento del vacío y criterio escrito de cambio anticipado. Luego, ejecutar el ajuste del Uhlebox y fijar el estándar de vida del paño por condición.",
+    "verificacion": "El siguiente paño alcanza 90 días o más sin corte de hoja por pérdida de napa.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>10629</code> rodillo lumpbreaker",
+    "eventos": [
+     10629
+    ],
+    "control_que_falto": "La carga en los extremos del nip no se mide; la causa quedó en hipótesis.",
+    "medida": "Incorporar la impresión de nip como tarea estándar en cada detención de PM1, con perfil registrado y tolerancia definida.",
+    "verificacion": "Perfil de nip dentro de tolerancia en dos detenciones consecutivas.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>9600</code> retraso en detención programada",
+    "eventos": [
+     9600
+    ],
+    "control_que_falto": "El punto de no retorno se definió para una tarea; el resto de la ruta crítica no lo tiene.",
+    "medida": "Extender el punto de no retorno y el hitograma de puente grúa a todas las tareas de ruta crítica, como requisito de la planificación de paradas.",
+    "verificacion": "Próxima detención programada sin retraso de partida por maniobras.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   }
+  ]
+ },
+ "Planta térmica": {
+  "planta": "Nueva Aldea",
+  "conclusion": "La rastra 919 falla por una combinación de condición de proceso (mix de biomasa y acumulación de material) y detección tardía; cambiar el sprocket no modificó ninguna de las dos. Las medidas correctas ya están escritas, pero repartidas en dos RdP y con vencimiento posterior a los eventos. En el resto del NAT las fallas apuntan al plan preventivo (lubricación, filtros, válvulas) y se trataron como reparaciones.",
+  "medidas": [
+   {
+    "caso": "<code>12744</code> / <code>10624</code> rastra 919",
+    "eventos": [
+     12744,
+     10624
+    ],
+    "control_que_falto": "No hay gatillo operacional de sobrecarga ni inspección temprana; la entrega de trabajos de la EESS no tiene ITO de planta.",
+    "medida": "Adelantar como control interino el procedimiento de régimen severo con alarmas de corriente y carga en DCS; inspección de sprocket y rodamiento y limpieza de la zona del reductor con frecuencia definida; ITO de planta en cada entrega de la EESS.",
+    "verificacion": "60 a 90 días sin atasco ni falla de rodamiento; alarmas activadas con respuesta registrada.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>11680</code> bomba de agua de alimentación",
+    "eventos": [
+     11680
+    ],
+    "control_que_falto": "Falta de lubricación y filtro saturado son fallas del plan preventivo, no de los componentes.",
+    "medida": "Revisar frecuencia de lubricación del motor 462-31-923 y de las bombas gemelas; medir la presión diferencial del filtro de succión con criterio de cambio; prueba funcional periódica de la válvula de flujo mínimo.",
+    "verificacion": "Ruta ejecutada y presión diferencial bajo el límite en tres controles seguidos.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>10633</code> lecho mixto 1",
+    "eventos": [
+     10633
+    ],
+    "control_que_falto": "No hay control de calidad en la recepción de flautines.",
+    "medida": "Especificación y QA/QC de recepción de flautines (material y ranura), más inspección interna en cada parada; incorporar el aprendizaje de Arauco L2 (<code>9513</code>).",
+    "verificacion": "Sin resina en la trampa durante el siguiente ciclo de operación.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>11716</code> válvula 565PV920C",
+    "eventos": [
+     11716
+    ],
+    "control_que_falto": "Tres componentes fallaron a la vez: la válvula se mantiene por falla.",
+    "medida": "Incluirla en el plan de válvulas críticas con diagnóstico periódico de posicionador y revisión del cable Fieldbus.",
+    "verificacion": "Diagnóstico sin desviaciones en la siguiente ruta.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   }
+  ]
+ },
+ "Fibra": {
+  "planta": "Nueva Aldea",
+  "conclusion": "Los dos eventos de mayor riesgo tienen el mismo origen: el equipo no estaba en ningún plan (válvulas de seguridad fuera de DS, módulo al término de su vida útil). Es una brecha de cobertura de la estrategia, no de ejecución, y por lo tanto puede existir en otros equipos del área.",
+  "medidas": [
+   {
+    "caso": "<code>11710</code> válvulas de seguridad, área 555",
+    "eventos": [
+     11710
+    ],
+    "control_que_falto": "Las VS fuera de circuitos afectos a DS no tienen estrategia, valor de seteo ni repuesto calibrado.",
+    "medida": "Control interino hasta el 1-dic: identificar las VS en servicios peligrosos (clorato), verificar calibración vigente y asegurar repuesto calibrado. Extender el levantamiento a las demás áreas químicas.",
+    "verificacion": "100% de las VS del área 555 con fecha de calibración y plan cargado en SAP.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>10628</code> módulo AI",
+    "eventos": [
+     10628
+    ],
+    "control_que_falto": "No hay gestión de obsolescencia de módulos ni reapriete de borneras en ruta.",
+    "medida": "Levantamiento de módulos por antigüedad con plan de reemplazo y stock mínimo; reapriete de borneras en la ruta preventiva.",
+    "verificacion": "Plan de reemplazo aprobado y sin fallas de módulo en 6 meses.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>12740</code> lavado del difusor",
+    "eventos": [
+     12740
+    ],
+    "control_que_falto": "La obstrucción se detecta cuando ya afecta el proceso.",
+    "medida": "Una vez confirmada la causa, definir límite de alarma para flujo de boquillas y fibra en licor de lavado, y limpieza de anillos por condición.",
+    "verificacion": "Flujo de boquillas dentro de rango en la prueba posterior a la limpieza y a los 60 días.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>9603</code> sellamiento de prensa",
+    "eventos": [
+     9603
+    ],
+    "control_que_falto": "El SOP existe, pero no se sabe si redujo los sellamientos.",
+    "medida": "Registrar cada sellamiento y revisar la eficacia del SOP y del nuevo ajuste de velocidad del tornillo.",
+    "verificacion": "Sellamientos por mes a 60 días, comparados con el período anterior.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   }
+  ]
+ },
+ "CyH": {
+  "planta": "Nueva Aldea",
+  "conclusion": "El NAT analiza bien el mecanismo, pero los aprendizajes quedan como pruebas o estudios y no como límites operacionales o lógica permanente. Los tres eventos de filtros comparten origen, la carga de dregs, y se tratan por separado.",
+  "medidas": [
+   {
+    "caso": "<code>12756</code> / <code>11676</code> / <code>9594</code> dregs y X-Filters",
+    "eventos": [
+     12756,
+     11676,
+     9594
+    ],
+    "control_que_falto": "No hay ventana operacional para la carga de dregs ni para los X-Filters.",
+    "medida": "RdP único para los tres eventos. Definir límites de carga de dregs y decantación con alarma en DCS y plan de reacción; asignar límite y responsable al parámetro ya creado en Quality; adelantar las acciones del 31-dic.",
+    "verificacion": "90 días sin limitación de producción de licor blanco ni vibración del ventilador DNCG.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>9594</code> secuencia de lavado ácido",
+    "eventos": [
+     9594
+    ],
+    "control_que_falto": "La secuencia favorece la cavitación; la corrección quedó como prueba.",
+    "medida": "Dejar el retardo de partida como lógica permanente en los 4 filtros mediante gestión del cambio y corregir las infiltraciones de aire de la bomba.",
+    "verificacion": "Tiempo de secuencia dentro del estándar en 10 lavados consecutivos.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>10613</code> Horno de Cal",
+    "eventos": [
+     10613
+    ],
+    "control_que_falto": "Los motores operan sobre su velocidad nominal y no hay límite ni monitoreo que lo controle.",
+    "medida": "Límite de velocidad o carga como control interino, alarma de vibraciones en línea y VDF de repuesto disponible, hasta decidir el reemplazo de motores.",
+    "verificacion": "Sin detención del horno por accionamiento en 90 días; vibraciones bajo el límite.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   }
+  ]
+ },
+ "Efluentes": {
+  "planta": "Nueva Aldea",
+  "conclusion": "El NAT actúa sobre el diseño cuando lo identifica, pero sus RdP no dejan escrita la causa, así que no se puede saber si las acciones previenen. Los equipos críticos para el cumplimiento ambiental (emisario, sopladores) hoy dependen de reaccionar a la falla.",
+  "medidas": [
+   {
+    "caso": "<code>12737</code> emisario",
+    "eventos": [
+     12737
+    ],
+    "control_que_falto": "No hay rutina sobre ventosas ni verificación de posición de válvulas de corte; la pérdida de capacidad se detecta tarde.",
+    "medida": "Ruta periódica de las ventosas críticas (1, 13 y 26) y de posición de válvulas de corte; alarma temprana por relación presión–flujo; despresurización y limpieza del ducto como tarea recurrente de cada PGP.",
+    "verificacion": "Capacidad del emisario recuperada tras la PGP y estable en los 3 meses siguientes.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>10623</code> soplador arrendado",
+    "eventos": [
+     10623
+    ],
+    "control_que_falto": "Los equipos arrendados entran sin criterio de aceptación ni plan de mantenimiento conocido.",
+    "medida": "Exigir al contratista informe de causa, plan de mantenimiento y protocolo de recepción; definir equipo de respaldo.",
+    "verificacion": "Informe recibido y protocolo aplicado al próximo equipo arrendado.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>11698</code> desgaste",
+    "eventos": [
+     11698
+    ],
+    "control_que_falto": "El monitoreo de celda de carga y vibraciones fue puntual.",
+    "medida": "Convertir ambos monitoreos en ruta con límite de intervención definido.",
+    "verificacion": "Dos mediciones consecutivas bajo el límite.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>10664</code> bomba con sólidos",
+    "eventos": [
+     10664
+    ],
+    "control_que_falto": "Los difusores del pozo de succión no se mantienen operativos.",
+    "medida": "Ejecutar la mejora solicitada y agregar la revisión de difusores al plan preventivo.",
+    "verificacion": "Sin desgaste anormal en la siguiente inspección de la bomba.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   }
+  ]
+ },
+ "Licor": {
+  "planta": "Nueva Aldea",
+  "conclusion": "El NAT responde rápido con ajustes operacionales, pero un ajuste de setpoint no es un control: si no queda en un estándar con límite y alarma, la condición vuelve con el siguiente turno. En <code>10643</code> el riesgo sigue abierto porque la medida fue aislar el equipo, no recuperarlo.",
+  "medidas": [
+   {
+    "caso": "<code>10643</code> contaminación de agua demi",
+    "eventos": [
+     10643
+    ],
+    "control_que_falto": "No hay detección en línea de contaminación aguas abajo de los intercambiadores; dos equipos quedaron en baipás sin plan.",
+    "medida": "Reparar o reemplazar los intercambiadores con fecha comprometida; alarma de conductividad y sílice en agua demi; prueba de hermeticidad en cada PGP.",
+    "verificacion": "Sílice dentro de límite y baipás retirados.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>11720</code> ensuciamiento de concentradores",
+    "eventos": [
+     11720
+    ],
+    "control_que_falto": "No hay ventana operacional de sulfato ni de perfil de sólidos.",
+    "medida": "Definir límites de sulfato y sólidos con alarma en DCS y análisis de laboratorio periódico; dejar la apertura de la HV940 como estándar si se confirma su efecto.",
+    "verificacion": "Frecuencia de lavado de concentradores a 60 días, comparada con el período anterior.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>11687</code> circuito de ácido",
+    "eventos": [
+     11687
+    ],
+    "control_que_falto": "La válvula check y las válvulas de alivio no tienen inspección programada.",
+    "medida": "Termografía rutinaria en cada regeneración e inspección programada de la check 562-V-1159 y del vaso decantador.",
+    "verificacion": "Sin mezcla de ácido y agua antes de la check en tres regeneraciones seguidas.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   },
+   {
+    "caso": "<code>9606</code> proyección de licor",
+    "eventos": [
+     9606
+    ],
+    "control_que_falto": "La revisión del programa semanal en el inicio de turno puede diluirse con el tiempo.",
+    "medida": "Dejarla como punto fijo de la agenda del inicio de turno y revisar en la reunión RdP que se esté haciendo.",
+    "verificacion": "Revisión del programa semanal registrada en los inicios de turno del mes.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   }
+  ]
+ },
+ "Servicios Centrales": {
+  "planta": "Nueva Aldea",
+  "conclusion": "La causa está bien identificada; lo que falta es ejecutar. Mientras el procedimiento de cierre mensual no exista, el error puede repetirse en cada cierre.",
+  "medidas": [
+   {
+    "caso": "<code>11729</code> cierre mensual",
+    "eventos": [
+     11729
+    ],
+    "control_que_falto": "No hay validación formal de materiales de consumo total ni canal entre Control de Costos y Estadística.",
+    "medida": "Checklist de cierre mensual con validación de stock 0 y doble revisión, como control interino hasta publicar el procedimiento y la transacción SAP.",
+    "verificacion": "Dos cierres mensuales consecutivos sin diferencias de consumo.",
+    "estado": "propuesta",
+    "origen": "Reporte RdP ago-sep 2026"
+   }
+  ]
+ }
+}

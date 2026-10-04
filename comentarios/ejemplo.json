@@ -1,12 +1,17 @@
 {
   "Planta": {
-    "lectura": "Texto breve (2-3 líneas) con la lectura del día para la planta. Citar IDs de evento.",
-    "focos": [
-      "<b>Foco 1</b>: hecho con ID de evento → qué exigir en la reunión RdP.",
-      "<b>Foco 2</b>: ..."
-    ]
+    "lectura": "Lectura del día en 2-3 líneas, con IDs de evento.",
+    "logro": "Una frase con el logro del período y su evidencia.",
+    "focos": ["<b>Hecho con <code>ID</code></b>: por qué importa → qué exigir en la reunión RdP."],
+    "fortalezas": ["<b>Patrón</b>: evidencia con <code>ID</code>."],
+    "brechas": ["<b>Patrón</b>: evidencia con ejemplos textuales y <code>ID</code>."],
+    "casos": ["<b>Equipo — fenómeno</b> (<code>ID</code> → <code>ID</code>): qué está pendiente y qué se requiere."]
   },
   "Máquina": {
-    "focos": ["<b>Posible recurrencia en <code>11702</code></b>: ..."]
+    "focos": ["..."],
+    "fortalezas": ["..."],
+    "brechas": ["..."],
+    "conclusion": "Causa de fondo del patrón del NAT.",
+    "medidas": [["<code>11702</code> paño PU", "Control que faltó o falló", "Medida (con control interino si la de fondo espera una parada)", "Verificación de eficacia: criterio medible y plazo"]]
   }
 }
