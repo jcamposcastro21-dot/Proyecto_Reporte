@@ -45,6 +45,7 @@ python3 pruebas/validar_rit.py out/RIT_semanal_Nueva_Aldea.html        # validac
 
 ## Convenciones
 
+- **Todo reporte o informe aplica la skill `playbook-mgo`** (marco del Playbook MGO oct-2025): ubicar el reporte en el ciclo Planificación–Ejecución–Verificación–Aprendizaje, separar KPIs de resultados y de gestión, nombrar riesgos y controles con la matriz y los ámbitos del MGO, proponer barreras según la jerarquía de controles y cerrar en mapa de procesos, matriz de riesgos o documento.
 - Los números salen siempre del script. Los textos los redacta Claude o una persona en `comentarios/`.
 - Cada afirmación cita IDs de evento. Las medidas de control son propuestas a validar con el NAT.
 - Si cambias una regla o un umbral, actualiza también `.claude/skills/reporte-diario-rdp/references/reglas_calidad.md`.
