@@ -1,0 +1,323 @@
+<title>Calibración prompt CTBH por tipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: informe de una columna (~760px) con tablas desbordables y un gráfico de barras pareadas; olivo de marca para jerarquía, azul/naranja validados solo para datos. */
+:root{
+  --bg:#f7f7f3; --panel:#eeeee6; --fg:#23251c; --muted:#62645a; --rule:#d9d9cf;
+  --accent:#646b0f; --accent-soft:#e6e8cf;
+  --s-actual:#eb6834; --s-nuevo:#2a78d6;
+  --ok:#2e7d32; --warn:#9a5b00; --bad:#b3261e;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Public Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#16170f; --panel:#202118; --fg:#e8e9de; --muted:#a4a698; --rule:#35372b;
+  --accent:#bcc54e; --accent-soft:#2c2e1c;
+  --s-actual:#d95926; --s-nuevo:#3987e5;
+  --ok:#72c276; --warn:#e3a54a; --bad:#f07c71; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16170f; --panel:#202118; --fg:#e8e9de; --muted:#a4a698; --rule:#35372b;
+  --accent:#bcc54e; --accent-soft:#2c2e1c;
+  --s-actual:#d95926; --s-nuevo:#3987e5;
+  --ok:#72c276; --warn:#e3a54a; --bad:#f07c71; color-scheme:dark}
+
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15.5px;line-height:1.6}
+.wrap{max-width:780px;margin:0 auto;padding-inline:20px;padding-block:40px 72px;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(1.7rem,4.2vw,2.35rem);font-weight:700;color:var(--accent)}
+h2{font-size:1.4rem;font-weight:700;color:var(--accent)}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0;max-width:68ch}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+.eyebrow{font-family:var(--f-data);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:10px;border-bottom:2px solid var(--accent);padding-bottom:22px}
+.sub{color:var(--muted)}
+.mgo{font-size:.9rem;background:var(--accent-soft);padding:10px 14px;border-radius:4px;max-width:none}
+ul,ol{margin:0;padding-left:1.25em;display:flex;flex-direction:column;gap:8px;max-width:70ch}
+strong{font-weight:600}
+.num,td.n,th.n{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}
+.tile{background:var(--panel);padding:14px 16px;border-radius:4px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile .big{font-family:var(--f-data);font-size:1.35rem;font-weight:500}
+.tile .lbl{font-size:.82rem;color:var(--muted);line-height:1.4}
+.scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:560px}
+th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
+thead th{background:var(--panel);font-weight:600;font-size:.8rem}
+tr:last-child td{border-bottom:none}
+td.n,th.n{text-align:right;white-space:nowrap}
+td.diag{background:var(--accent-soft);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--bad)}
+.note{font-size:.84rem;color:var(--muted)}
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.84rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:12px;height:12px;border-radius:2px;display:inline-block}
+svg text{font-family:var(--f-body)}
+.chart{overflow-x:auto}
+.chart svg{width:100%;min-width:520px;height:auto;display:block}
+.bar:hover{opacity:.8}
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.case{border:1px solid var(--rule);border-radius:4px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.case .meta{font-family:var(--f-data);font-size:.75rem;color:var(--muted)}
+.case .q{font-style:italic;font-size:.9rem}
+.case .why{font-size:.86rem}
+.delta{font-family:var(--f-data);font-weight:500}
+.delta.up{color:var(--ok)} .delta.down{color:var(--bad)}
+footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.82rem;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">ARAUCO · Celulosa · Evaluación de Acciones de Mejora CTBH</span>
+  <h1>Calibración del prompt de evaluación CTBH por tipo de acción</h1>
+  <p class="sub">Corrida en paralelo del prompt base + módulos por tipo sobre una muestra de 300 acciones, comparada con la nota que asigna el prompt actual · 6 de octubre de 2026</p>
+  <p class="mgo"><strong>Lectura MGO.</strong> Este informe mide la <strong>Etapa 3 · Verificación</strong> (confirmaciones de trabajo bien hecho) y su paso a la <strong>Etapa 4 · Aprendizaje</strong>: la acción de mejora es el puente que cierra el ciclo en un documento, una matriz de riesgos o un control. La nota de calidad de la acción es un <strong>KPI de gestión</strong> (adherencia a la práctica), no un KPI de resultados.</p>
+</header>
+
+<section>
+  <h2>Resumen</h2>
+  <div class="tiles">
+    <div class="tile"><span class="big">86% → 62%</span><span class="lbl">Controles físicos detallados con nota ≥ 6,5 (actual → nuevo)</span></div>
+    <div class="tile"><span class="big">0% → 32%</span><span class="lbl">Documentación detallada con nota ≥ 6,5 (actual → nuevo)</span></div>
+    <div class="tile"><span class="big">22,9% → 2,4%</span><span class="lbl">Peso del valor más repetido (hoy 5,8)</span></div>
+    <div class="tile"><span class="big">5,50 → 5,42</span><span class="lbl">Nota promedio de la muestra: no hay inflación</span></div>
+  </div>
+  <ul>
+    <li><strong>El sesgo contra lo administrativo se corrige en buena parte.</strong> Entre acciones detalladas, la distancia entre controles físicos y documentación baja de 86 a 30 puntos porcentuales. Documentación, avisos SAP y matriz de riesgos llegan ahora a 6,5 o más cuando la acción es buena dentro de su tipo.</li>
+    <li><strong>Las notas no se inflan.</strong> El promedio baja levemente (5,50 a 5,42). Sube lo documental bien escrito y baja lo vago, incluidos controles físicos sin ubicación ni especificación.</li>
+    <li><strong>La escala se usa completa.</strong> Se pasa de 18 valores distintos a 136; aparece el 7,0 y el 5,8 deja de ser un ancla.</li>
+    <li><strong>El campo "Tipo de acción" no es confiable.</strong> Solo 53% de las acciones corresponde al tipo seleccionado. Por eso es clave la regla del campo <code>tipo_evaluado</code>.</li>
+    <li><strong>Coaching e Instancia sí existen en la base</strong>, aunque registrados como "Otro", "Oportunidad de mejora" o "Matriz": 18 de 300 acciones (6%). Sirven para calibrar esos dos módulos.</li>
+    <li><strong>Falta el panel de expertos</strong> (criterio 3 de la propuesta). Se deja preparada la planilla ciega para hacerlo.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Cómo se hizo</h2>
+  <ol>
+    <li><strong>Base.</strong> Archivo CTBH de 16.560 registros (agosto a octubre de 2026). 3.282 filas tienen nota de acción de mejora.</li>
+    <li><strong>Muestra.</strong> 50 acciones por cada uno de los 6 tipos (300 en total), estratificadas en proporción a cada planta. Para "Revisar y/o actualizar matriz de riesgos" hay 57 filas con nota, así que se tomaron 50 de ellas.</li>
+    <li><strong>Evaluación ciega.</strong> Cada acción se evaluó con el prompt base y el módulo del tipo, sin ver la nota actual. Se usaron los mismos datos de entrada que define el prompt: planta, área, actividad, ámbito, riesgo, retroalimentación, acción inmediata y acción de mejora.</li>
+    <li><strong>Nota final.</strong> 0,25·Pertinencia + 0,20·Especificidad + 0,15·Accionabilidad + 0,30·Efectividad del tipo + 0,10·Claridad.</li>
+    <li><strong>Comparación.</strong> Se contrastó con la nota actual usando los criterios de la sección "Calibración antes de producción" de la propuesta.</li>
+  </ol>
+  <p class="note">"Acción detallada" = texto de más de 150 caracteres, igual que en el diagnóstico original. Los porcentajes por tipo usan el tipo real de la acción (<code>tipo_evaluado</code>). Con 12 a 31 acciones detalladas por tipo, cada punto porcentual es indicativo, no definitivo.</p>
+</section>
+
+<section>
+  <h2>Resultado frente a los criterios de calibración</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Criterio de la propuesta</th><th>Meta</th><th>Resultado en la muestra</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td>1 · 50 acciones por tipo, estratificadas por planta</td><td>300 acciones</td><td class="num">300 (297 evaluables, 3 registros de prueba quedan en null)</td><td><span class="pill ok">✓ Cumple</span></td></tr>
+      <tr><td>2 y 3 · Diferencia con expertos a ciegas</td><td>&lt; 0,5 puntos por tipo</td><td>Sin panel de expertos todavía. La diferencia media con el prompt actual es de 0,60 a 0,84 según el tipo</td><td><span class="pill warn">● Pendiente</span></td></tr>
+      <tr><td>4 · % ≥ 6,5 en acciones detalladas, similar entre tipos</td><td>Rango estrecho (hoy 0% a 86%)</td><td class="num">15% a 62% (documentación 32%, físicos 62%, SAP 62%, matriz 21%)</td><td><span class="pill warn">● Mejora parcial</span></td></tr>
+      <tr><td>5 · Ningún valor concentra más del 15% de las notas</td><td>≤ 15%</td><td class="num">Valor más frecuente: 2,4% (hoy 5,8 = 22,9%)</td><td><span class="pill ok">✓ Cumple</span></td></tr>
+      <tr><td>Sin inflar notas</td><td>Promedio similar</td><td class="num">5,50 → 5,42</td><td><span class="pill ok">✓ Cumple</span></td></tr>
+      <tr><td>No comparar con controles físicos</td><td>Solo cuando aplica</td><td class="num">Justificaciones que mencionan físico, barrera o ingeniería: 94,6% → 2,4% fuera del tipo físico</td><td><span class="pill ok">✓ Cumple</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">El criterio 4 queda en mejora parcial por "Otro" (15%) y "Oportunidad de mejora" (25%). En la muestra, esa diferencia refleja calidad de redacción más que sesgo: "Otro" concentra los "reforzar", "gestionar" y "revisar" sin objeto. Hay que confirmarlo con el panel de expertos.</p>
+</section>
+
+<section>
+  <h2>El sesgo antes y después</h2>
+  <figure>
+    <h3>Acciones detalladas con nota ≥ 6,5, por tipo real de acción</h3>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sw" style="background:var(--s-actual)"></i>Prompt actual</span>
+      <span><i class="sw" style="background:var(--s-nuevo)"></i>Prompt nuevo por tipo</span>
+    </div>
+    <div class="chart">
+    <svg viewBox="0 0 620 300" role="img" aria-label="Porcentaje de acciones detalladas con nota 6,5 o más, prompt actual versus prompt nuevo, por tipo de acción">
+      <g stroke="var(--rule)" stroke-width="1">
+        <line x1="190" y1="14" x2="190" y2="262"/><line x1="285" y1="14" x2="285" y2="262" stroke-dasharray="2 3"/><line x1="380" y1="14" x2="380" y2="262" stroke-dasharray="2 3"/><line x1="475" y1="14" x2="475" y2="262" stroke-dasharray="2 3"/><line x1="570" y1="14" x2="570" y2="262" stroke-dasharray="2 3"/>
+      </g>
+      <g font-size="11" fill="var(--muted)" text-anchor="middle">
+        <text x="190" y="280">0%</text><text x="285" y="280">25%</text><text x="380" y="280">50%</text><text x="475" y="280">75%</text><text x="570" y="280">100%</text>
+      </g>
+      <g font-size="12.5" fill="var(--fg)" text-anchor="end">
+        <text x="180" y="33">Documentación (31)</text>
+        <text x="180" y="74">Aviso SAP (13)</text>
+        <text x="180" y="115">Controles físicos (21)</text>
+        <text x="180" y="156">Matriz de riesgos (14)</text>
+        <text x="180" y="197">Oportunidad mejora (12)</text>
+        <text x="180" y="238">Otro (20)</text>
+      </g>
+      <g font-size="11" fill="var(--fg)" font-family="IBM Plex Mono, monospace">
+        <!-- y base: 18 + 41*i ; actual bar y, nuevo bar y+14 ; x = 190 + v*3.8 -->
+        <rect class="bar" x="190" y="18" width="2" height="12" rx="1" fill="var(--s-actual)"><title>Documentación · actual 0%</title></rect><text x="198" y="28">0%</text>
+        <rect class="bar" x="190" y="32" width="121.6" height="12" rx="2" fill="var(--s-nuevo)"><title>Documentación · nuevo 32%</title></rect><text x="317.6" y="42">32%</text>
+
+        <rect class="bar" x="190" y="59" width="57" height="12" rx="2" fill="var(--s-actual)"><title>Aviso SAP · actual 15%</title></rect><text x="253" y="69">15%</text>
+        <rect class="bar" x="190" y="73" width="235.6" height="12" rx="2" fill="var(--s-nuevo)"><title>Aviso SAP · nuevo 62%</title></rect><text x="431.6" y="83">62%</text>
+
+        <rect class="bar" x="190" y="100" width="326.8" height="12" rx="2" fill="var(--s-actual)"><title>Controles físicos · actual 86%</title></rect><text x="522.8" y="110">86%</text>
+        <rect class="bar" x="190" y="114" width="235.6" height="12" rx="2" fill="var(--s-nuevo)"><title>Controles físicos · nuevo 62%</title></rect><text x="431.6" y="124">62%</text>
+
+        <rect class="bar" x="190" y="141" width="2" height="12" rx="1" fill="var(--s-actual)"><title>Matriz de riesgos · actual 0%</title></rect><text x="198" y="151">0%</text>
+        <rect class="bar" x="190" y="155" width="79.8" height="12" rx="2" fill="var(--s-nuevo)"><title>Matriz de riesgos · nuevo 21%</title></rect><text x="275.8" y="165">21%</text>
+
+        <rect class="bar" x="190" y="182" width="125.4" height="12" rx="2" fill="var(--s-actual)"><title>Oportunidad de mejora · actual 33%</title></rect><text x="321.4" y="192">33%</text>
+        <rect class="bar" x="190" y="196" width="95" height="12" rx="2" fill="var(--s-nuevo)"><title>Oportunidad de mejora · nuevo 25%</title></rect><text x="291" y="206">25%</text>
+
+        <rect class="bar" x="190" y="223" width="57" height="12" rx="2" fill="var(--s-actual)"><title>Otro · actual 15%</title></rect><text x="253" y="233">15%</text>
+        <rect class="bar" x="190" y="237" width="57" height="12" rx="2" fill="var(--s-nuevo)"><title>Otro · nuevo 15%</title></rect><text x="253" y="247">15%</text>
+      </g>
+    </svg>
+    </div>
+    <p class="note">Entre paréntesis, cantidad de acciones detalladas (&gt; 150 caracteres) de cada tipo real en la muestra. Instancia (4) y Coaching (1) se omiten por tamaño de muestra.</p>
+  </figure>
+
+  <h3>Notas por tipo seleccionado en la CTBH</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Tipo seleccionado</th><th class="n">N</th><th class="n">Nota actual</th><th class="n">Nota nueva</th><th class="n">≥ 6,5 actual</th><th class="n">≥ 6,5 nuevo</th><th class="n">Diferencia media absoluta</th></tr></thead>
+    <tbody>
+      <tr><td>Actualizar o crear documentación</td><td class="n">49</td><td class="n">5,47</td><td class="n">5,48</td><td class="n">0%</td><td class="n">12%</td><td class="n">0,61</td></tr>
+      <tr><td>Generar aviso en SAP</td><td class="n">50</td><td class="n">5,36</td><td class="n">5,40</td><td class="n">12%</td><td class="n">24%</td><td class="n">0,75</td></tr>
+      <tr><td>Implementar controles físicos</td><td class="n">49</td><td class="n">6,23</td><td class="n">5,51</td><td class="n">51%</td><td class="n">18%</td><td class="n">0,84</td></tr>
+      <tr><td>Oportunidad de mejora propuesta</td><td class="n">50</td><td class="n">5,42</td><td class="n">5,54</td><td class="n">24%</td><td class="n">12%</td><td class="n">0,60</td></tr>
+      <tr><td>Otro</td><td class="n">50</td><td class="n">5,39</td><td class="n">5,52</td><td class="n">18%</td><td class="n">20%</td><td class="n">0,72</td></tr>
+      <tr><td>Revisar y/o actualizar matriz de riesgos</td><td class="n">49</td><td class="n">5,11</td><td class="n">5,08</td><td class="n">2%</td><td class="n">6%</td><td class="n">0,78</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">"Implementar controles físicos" baja 0,72 puntos en promedio: 12 de sus 50 acciones son en realidad gestión, orden o seguimiento ("Gestionar el retiro de los residuos", "Seguimiento de comportamiento de tomamuestra") y hoy reciben la nota de un control físico solo por el tipo elegido.</p>
+
+  <h3>Subnotas promedio por tipo real</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Tipo real</th><th class="n">N</th><th class="n">Pertinencia</th><th class="n">Especificidad</th><th class="n">Accionabilidad</th><th class="n">Efectividad</th><th class="n">Claridad</th><th class="n">Nota nueva</th></tr></thead>
+    <tbody>
+      <tr><td>Implementar controles físicos</td><td class="n">50</td><td class="n">6,50</td><td class="n">5,84</td><td class="n">5,85</td><td class="n">5,69</td><td class="n">5,77</td><td class="n">5,95</td></tr>
+      <tr><td>Actualizar o crear documentación</td><td class="n">57</td><td class="n">6,06</td><td class="n">5,65</td><td class="n">5,68</td><td class="n">5,46</td><td class="n">5,74</td><td class="n">5,71</td></tr>
+      <tr><td>Revisar y/o actualizar matriz de riesgos</td><td class="n">23</td><td class="n">6,20</td><td class="n">5,67</td><td class="n">5,28</td><td class="n">5,39</td><td class="n">5,39</td><td class="n">5,63</td></tr>
+      <tr><td>Oportunidad de mejora propuesta</td><td class="n">24</td><td class="n">6,15</td><td class="n">5,65</td><td class="n">5,21</td><td class="n">5,46</td><td class="n">5,40</td><td class="n">5,62</td></tr>
+      <tr><td>Generar aviso en SAP</td><td class="n">52</td><td class="n">5,84</td><td class="n">5,34</td><td class="n">5,47</td><td class="n">5,16</td><td class="n">5,28</td><td class="n">5,42</td></tr>
+      <tr><td>Otro</td><td class="n">73</td><td class="n">5,27</td><td class="n">4,79</td><td class="n">4,92</td><td class="n">4,51</td><td class="n">5,03</td><td class="n">4,87</td></tr>
+      <tr><td>Instancia</td><td class="n">16</td><td class="n">4,94</td><td class="n">4,41</td><td class="n">4,59</td><td class="n">4,41</td><td class="n">4,97</td><td class="n">4,62</td></tr>
+      <tr><td>Coaching</td><td class="n">2</td><td class="n">6,25</td><td class="n">5,75</td><td class="n">5,00</td><td class="n">5,00</td><td class="n">5,25</td><td class="n">5,48</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">El criterio más débil en todos los tipos es la <strong>Efectividad propia del tipo</strong> (5,15 en promedio), seguido de Especificidad y Accionabilidad (5,35). La brecha principal está en el qué y el dónde, no en la pertinencia (5,86).</p>
+</section>
+
+<section>
+  <h2>El tipo seleccionado no describe la acción</h2>
+  <p>Solo 159 de 300 acciones (53%) corresponden al tipo que eligió el líder. Las filas son el tipo seleccionado; las columnas, el tipo real según el contenido. La diagonal marca las coincidencias.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Seleccionado ↓ / Real →</th><th class="n">Doc.</th><th class="n">SAP</th><th class="n">Físico</th><th class="n">Matriz</th><th class="n">Op. mejora</th><th class="n">Otro</th><th class="n">Instancia</th><th class="n">Coaching</th><th class="n">Null</th></tr></thead>
+    <tbody>
+      <tr><td>Documentación</td><td class="n diag">38</td><td class="n">0</td><td class="n">1</td><td class="n">0</td><td class="n">2</td><td class="n">7</td><td class="n">1</td><td class="n">0</td><td class="n">1</td></tr>
+      <tr><td>Aviso SAP</td><td class="n">0</td><td class="n diag">36</td><td class="n">8</td><td class="n">0</td><td class="n">1</td><td class="n">5</td><td class="n">0</td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td>Controles físicos</td><td class="n">3</td><td class="n">2</td><td class="n diag">29</td><td class="n">0</td><td class="n">3</td><td class="n">12</td><td class="n">0</td><td class="n">0</td><td class="n">1</td></tr>
+      <tr><td>Op. de mejora</td><td class="n">3</td><td class="n">5</td><td class="n">6</td><td class="n">1</td><td class="n diag">15</td><td class="n">16</td><td class="n">4</td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td>Otro</td><td class="n">7</td><td class="n">8</td><td class="n">4</td><td class="n">0</td><td class="n">3</td><td class="n diag">19</td><td class="n">8</td><td class="n">1</td><td class="n">0</td></tr>
+      <tr><td>Matriz de riesgos</td><td class="n">6</td><td class="n">1</td><td class="n">2</td><td class="n diag">22</td><td class="n">0</td><td class="n">14</td><td class="n">3</td><td class="n">1</td><td class="n">1</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><strong>"Matriz de riesgos" es el tipo menos fiel:</strong> 28 de 50 no tocan la matriz. Son "reforzar EPP", "revisar ABC" o "concientizar". La plantilla de Esperanza Secado repite este patrón.</li>
+    <li><strong>Avisos SAP que en realidad son controles físicos</strong> (8): barandas, barreras duras, viga con carro de izaje. El módulo físico los valora mejor y con razón.</li>
+    <li><strong>Instancia y Coaching aparecen sin estar en la lista de tipos:</strong> 16 instancias (charla de 5 minutos, reforzar en reunión de programación, campaña "NO use sus manos") y 2 coaching (recapacitación a contratista). Su nota media es la más baja (4,62) porque casi ninguna define audiencia, mensaje concreto y registro.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Casos que explican el cambio</h2>
+  <div class="cases">
+    <div class="case">
+      <span class="meta">Valdivia · Lavado · Matriz de riesgos</span>
+      <span class="delta up">5,2 → 6,82</span>
+      <p class="q">"…existe el riesgo de taco en líneas de prensas con riesgo residual alto… se requiere una evaluación del riesgo residual que responda a las medidas implementadas y declararlas en SoftExpert."</p>
+      <p class="why">Matriz, riesgo y controles explícitos. Antes se limitaba "por ser administrativa".</p>
+    </div>
+    <div class="case">
+      <span class="meta">Nueva Aldea · Máquina · Aviso SAP</span>
+      <span class="delta up">4,8 → 6,58</span>
+      <p class="q">"Generar aviso en SAP por cambio unidad rotatoria harnero 2106 por filtración sello mecánico."</p>
+      <p class="why">Equipo, condición y trabajo esperado definidos: es lo que se pide a un buen aviso.</p>
+    </div>
+    <div class="case">
+      <span class="meta">Nueva Aldea · Máquina · Avisos SAP</span>
+      <span class="delta up">5,0 → 6,73</span>
+      <p class="q">"Generar aviso de avería para cambiar vva check descarga bomba 2676 línea condensado. Programar en parada de área."</p>
+      <p class="why">Incluye oportunidad de ejecución. Antes quedaba en 5,0 por "no ser barrera física".</p>
+    </div>
+    <div class="case">
+      <span class="meta">Constitución · Digestor · Controles físicos</span>
+      <span class="delta down">6,0 → 3,60</span>
+      <p class="q">"Mejora en Caída de Astillas Digestor 32C14."</p>
+      <p class="why">Elegir "control físico" no basta: no dice qué control ni dónde. Nivel 3 del módulo.</p>
+    </div>
+    <div class="case">
+      <span class="meta">Arauco L3 · Prep. Madera · Controles físicos</span>
+      <span class="delta down">5,8 → 3,83</span>
+      <p class="q">"Gestionar el retiro de los residuos."</p>
+      <p class="why">Es gestión sin objeto ni resultado. Se evalúa con el módulo "Otro".</p>
+    </div>
+    <div class="case">
+      <span class="meta">Constitución · Prep. Madera · Op. de mejora</span>
+      <span class="delta down">6,2 → 3,80</span>
+      <p class="q">"Cambio de PLC por otro tipo de control."</p>
+      <p class="why">Idea general sin propuesta concreta ni beneficio: nivel 4 del módulo.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Buenas prácticas para replicar entre plantas</h2>
+  <p>Selección de acciones de la muestra que llegan a 6,85 o más con el prompt nuevo. Sirven como ejemplos reales para reemplazar los ejemplos ilustrativos de los módulos (criterio 6 de la propuesta).</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Planta · Área</th><th>Tipo real</th><th class="n">Nota</th><th>Acción (extracto)</th></tr></thead>
+    <tbody>
+      <tr><td>Arauco L2 · Caustificación</td><td>Control físico</td><td class="n">7,00</td><td>Reubicar el acceso a tobera norte del TK Clarificador Verde 2, libre de viga y barro, verificado en terreno antes de liberar la tarjeta roja.</td></tr>
+      <tr><td>Arauco L3 · General Planta</td><td>Documentación</td><td class="n">6,95</td><td>Actualizar la pauta de inspección del DRIS con registro fotográfico mensual de grietas en la celda 4, criterio de escalamiento y vínculo al plan de cierre.</td></tr>
+      <tr><td>Valdivia · Evaporadores</td><td>Documentación</td><td class="n">6,95</td><td>Procedimiento de lavado químico del IQ 351-58-131 con secuencia, criterios de término y verificación de efectividad.</td></tr>
+      <tr><td>Esperanza · Pta. Química</td><td>Control físico</td><td class="n">6,95</td><td>Pit de contención para transformadores T8 y T9 con capacidad, pretiles, drenaje y separador agua/aceite.</td></tr>
+      <tr><td>Esperanza · Maestranza</td><td>Documentación</td><td class="n">6,95</td><td>Procedimiento de configuración OPC UA con parámetros críticos y registro en la bitácora del taller PLC/DCS.</td></tr>
+      <tr><td>Valdivia · CR</td><td>Control físico</td><td class="n">6,95</td><td>Transmisor de presión diferencial en el atrapallamas NCG con alarma sobre 100 mm c.a. y verificación a 60 días.</td></tr>
+      <tr><td>Esperanza · Otras</td><td>Otro</td><td class="n">6,95</td><td>Muestra representativa de Kensol usado para caracterización en laboratorio externo y definir su gestión como residuo peligroso.</td></tr>
+      <tr><td>Nueva Aldea · Digestor</td><td>Op. de mejora</td><td class="n">6,88</td><td>Modificar la lógica de control de kappa por factor H ante cortes de astillas para evitar el rebote de kappa alto.</td></tr>
+      <tr><td>Valdivia · Máquina</td><td>Matriz de riesgos</td><td class="n">6,88</td><td>Incorporar el drenaje del TK Berol 250 m³ a IBC en la matriz de tareas con sus controles y cargarlo en SoftExpert.</td></tr>
+      <tr><td>Constitución · Horno de Cal</td><td>Documentación</td><td class="n">6,88</td><td>Corregir la planilla de grado de llenado con el tiempo de retención de la valla y rehacer la curva producción/velocidad.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Problemas de datos encontrados</h2>
+  <ul>
+    <li><strong>Registros de prueba con nota.</strong> 5 acciones con texto "prueba", "g" o "f" (IDs 130646, 128482, 126986, 126994, 126985) reciben hoy notas de 2,5 a 4,2. El prompt nuevo las deja en null, pero conviene eliminarlas de la base.</li>
+    <li><strong>Filas duplicadas por ámbito.</strong> Una misma CTBH aparece una vez por cada ámbito marcado. Las 3.282 filas con nota corresponden a 2.931 acciones distintas (351 repetidas). Los indicadores deben calcularse sobre acciones únicas, o una acción con dos ámbitos pesa doble.</li>
+    <li><strong>Acciones que describen lo ya hecho.</strong> Algunas acciones de mejora repiten la acción inmediata o narran la reparación ejecutada (por ejemplo, detector 23 reinstalado). El prompt debería pedir que se evalúe como acción futura y bajar Accionabilidad si no hay nada pendiente.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Ajustes recomendados y próximos pasos</h2>
+  <ol>
+    <li><strong>Agregar Instancia y Coaching a la lista de tipos del formulario CTBH</strong>, para que no queden escondidos en "Otro". Responsable: dueño del modelo MGO en la gerencia transversal, con validación del Líder del proceso de cada planta.</li>
+    <li><strong>Calibrar los módulos Coaching e Instancia con los 18 casos reales</strong> de esta muestra (están en la hoja "Evaluaciones" del Excel).</li>
+    <li><strong>Agregar al módulo "Otro" una regla para verbos sin objeto</strong> ("reforzar", "gestionar", "revisar", "asegurar"): si no hay objeto ni resultado verificable, Efectividad máxima de 4.</li>
+    <li><strong>Agregar al prompt base:</strong> si la acción de mejora solo describe lo ya ejecutado o repite la acción inmediata, Accionabilidad máxima de 4.</li>
+    <li><strong>Correr el panel de expertos.</strong> 2 o 3 expertos de seguridad y calidad completan la hoja "Panel ciego expertos" (300 acciones en orden aleatorio, sin notas). Meta: diferencia media &lt; 0,5 por tipo frente al prompt nuevo.</li>
+    <li><strong>Correr el prompt en producción</strong> con temperatura 0 y un solo modelo sobre la misma muestra, y comparar contra esta corrida y contra los expertos antes de reemplazar el prompt actual.</li>
+    <li><strong>Publicar la rúbrica por tipo a los líderes</strong> junto con la <code>sugerencia_mejora</code>, usando los casos reales de la tabla de buenas prácticas.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Por qué importa para la operación</h2>
+  <p>Una acción de mejora específica y verificable es la que realmente cambia un estándar: una HTE, una pauta, una matriz o un control en terreno. Si la nota castiga las acciones documentales, los líderes aprenden a declarar "control físico" aunque no lo sea, y el ciclo de aprendizaje del MGO se debilita. Un puntaje que premia la calidad dentro de cada tipo apoya la <strong>estabilidad</strong> (riesgos con controles reales) y la <strong>eficiencia</strong> (estándares que se actualizan sin esperar a un evento). La jerarquía de controles sigue vigente: para un riesgo alto, el líder debe preferir una barrera dura. Este puntaje mide si la acción está bien escrita para su tipo, no cuál tipo de control conviene usar.</p>
+</section>
+
+<footer>
+  <span><strong>Limitaciones.</strong> Las 300 evaluaciones las hizo un solo evaluador (Claude) aplicando el prompt y las rúbricas de la propuesta. No reemplazan al panel de expertos ni a la corrida del modelo de producción. Los porcentajes por tipo con menos de 20 acciones detalladas son indicativos.</span>
+  <span>Fuentes: CTBH (16.560 registros, ago–oct 2026); "Prompts de evaluación de Acciones de Mejora CTBH por tipo", 5 oct 2026; Playbook MGO v03 (lám. 32–35). Detalle por acción en <code>calibracion_ctbh_muestra300.xlsx</code>.</span>
+</footer>
+</div>
