@@ -204,10 +204,6 @@
   // Si se deja vacía, el formulario funciona en MODO PRUEBA: no envía nada
   // y solo muestra el JSON que se enviaría.
   const FLOW_URL = "";
-  // Tipo de disparador del flujo:
-  //   "teams" -> "Cuando se recibe una solicitud de webhook de Teams" (no Premium)
-  //   "http"  -> "Cuando se recibe una solicitud HTTP" (Premium)
-  const MODO_ENVIO = "teams";
   // =========================================================
 
   const CAMPOS = [
@@ -284,28 +280,15 @@
     btn.disabled = true;
     btn.textContent = "Guardando…";
     try {
-      if (MODO_ENVIO === "teams") {
-        // El webhook de Teams no permite leer su respuesta desde el navegador,
-        // así que se envía como texto simple y no se puede confirmar la creación.
-        await fetch(FLOW_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(datos)
-        });
-      } else {
-        const r = await fetch(FLOW_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(datos)
-        });
-        if (!r.ok) throw new Error("El flujo respondió con estado " + r.status + ".\n" + await r.text());
-      }
+      const r = await fetch(FLOW_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      });
+      if (!r.ok) throw new Error("El flujo respondió con estado " + r.status + ".\n" + await r.text());
       agregarHistorial(datos);
       limpiarCompromiso();
-      mostrar("ok", MODO_ENVIO === "teams"
-        ? "Enviado. Revisa la lista de SharePoint para confirmar la fila nueva."
-        : "Guardado. Se creó una fila nueva en la lista.");
+      mostrar("ok", "Enviado. La fila aparecerá en la lista de SharePoint en unos segundos.");
     } catch (err) {
       mostrar("err", "No se pudo enviar.\n" + err.message +
         "\n\nRevisa que la URL sea correcta y que el flujo esté activado.");
