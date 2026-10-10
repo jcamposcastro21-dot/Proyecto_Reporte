@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minuta Compromisos MGO</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --text: #1d2733; --muted: #5d6b7a;
+    --border: #d5dce3; --accent: #1f6f43; --accent-text: #ffffff;
+    --ok-bg: #e5f4ea; --ok-text: #1f6f43; --err-bg: #fbe9e7; --err-text: #a3261a;
+    --info-bg: #eaf1fb; --info-text: #1d4f91;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12171c; --card: #1b232b; --text: #e6ebf0; --muted: #9aa7b4;
+      --border: #2f3a45; --accent: #3fa36b; --accent-text: #0d1a12;
+      --ok-bg: #173323; --ok-text: #8fd6a9; --err-bg: #3a1c18; --err-text: #f2a79c;
+      --info-bg: #182a40; --info-text: #9cc3f2;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+          padding: 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 1rem; margin: 0 0 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; }
+  .full { grid-column: 1 / -1; }
+  label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 4px; }
+  label .req { color: var(--err-text); }
+  input, select, textarea { width: 100%; padding: 8px 10px; font: inherit; color: var(--text);
+          background: var(--card); border: 1px solid var(--border); border-radius: 6px; }
+  textarea { min-height: 80px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .invalid { border-color: var(--err-text); }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button { font: inherit; font-weight: 600; padding: 10px 22px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: .6; cursor: wait; }
+  .msg { padding: 10px 12px; border-radius: 6px; margin-top: 12px; display: none; white-space: pre-wrap; }
+  .msg.ok { display: block; background: var(--ok-bg); color: var(--ok-text); }
+  .msg.err { display: block; background: var(--err-bg); color: var(--err-text); }
+  .msg.info { display: block; background: var(--info-bg); color: var(--info-text); }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  .empty { color: var(--muted); font-style: italic; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Minuta · Seguimiento de Compromisos MGO</h1>
+  <p class="sub">Cada vez que presionas <b>Guardar</b> se crea una fila nueva en la lista de SharePoint.</p>
+
+  <form id="form" novalidate>
+    <div class="card">
+      <h2>Datos de la reunión <span class="sub">(se mantienen entre registros)</span></h2>
+      <div class="grid">
+        <div>
+          <label for="planta">Planta <span class="req">*</span></label>
+          <select id="planta" required>
+            <option>Planta Nueva Aldea</option>
+          </select>
+        </div>
+        <div>
+          <label for="fecha_solicitud">Fecha solicitud <span class="req">*</span></label>
+          <input type="date" id="fecha_solicitud" required>
+        </div>
+        <div>
+          <label for="area">Área <span class="req">*</span></label>
+          <select id="area" required>
+            <option value="">Seleccionar…</option>
+            <option>General Planta</option>
+            <option>Transversal</option>
+            <option>Procesos</option>
+            <option>Mejora continua</option>
+          </select>
+        </div>
+        <div>
+          <label for="subgerencia">Subgerencia <span class="req">*</span></label>
+          <select id="subgerencia" required>
+            <option value="">Seleccionar…</option>
+            <option>Operaciones</option>
+            <option>Procesos</option>
+            <option>Mejora Continua</option>
+            <option>MA</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Compromiso</h2>
+      <div class="grid">
+        <div>
+          <label for="practica_mgo">Práctica MGO <span class="req">*</span></label>
+          <select id="practica_mgo" required>
+            <option value="">Seleccionar…</option>
+            <option>Inicio de turno</option>
+            <option>Confirmaciones</option>
+            <option>RdP</option>
+            <option>Gestión del cambio</option>
+            <option>Gestión Documental</option>
+            <option>N/A - No aplica</option>
+          </select>
+        </div>
+        <div>
+          <label for="tipo_registro">Tipo de registro <span class="req">*</span></label>
+          <select id="tipo_registro" required>
+            <option value="">Seleccionar…</option>
+            <option>Solicitud</option>
+            <option>Compromiso</option>
+            <option>Definición</option>
+          </select>
+        </div>
+        <div>
+          <label for="prioridad">Prioridad <span class="req">*</span></label>
+          <select id="prioridad" required>
+            <option value="">Seleccionar…</option>
+            <option>Alta</option>
+            <option>Media</option>
+            <option>Baja</option>
+          </select>
+        </div>
+        <div>
+          <label for="responsable">Responsable <span class="req">*</span></label>
+          <input id="responsable" list="lista_personas" required autocomplete="off">
+        </div>
+        <div>
+          <label for="solicitante">Solicitante <span class="req">*</span></label>
+          <input id="solicitante" list="lista_personas" required autocomplete="off">
+        </div>
+        <div>
+          <label for="fecha_compromiso">Fecha compromiso <span class="req">*</span></label>
+          <input type="date" id="fecha_compromiso" required>
+        </div>
+        <div class="full">
+          <label for="descripcion">Descripción <span class="req">*</span></label>
+          <textarea id="descripcion" required></textarea>
+        </div>
+        <div class="full">
+          <label for="observacion">Observación / Avance</label>
+          <textarea id="observacion"></textarea>
+        </div>
+        <div>
+          <label for="estado">Estado <span class="req">*</span></label>
+          <select id="estado" required>
+            <option>Abierta</option>
+            <option>Cerrada</option>
+          </select>
+        </div>
+        <div>
+          <label for="fecha_cierre">Fecha de cierre</label>
+          <input type="date" id="fecha_cierre">
+        </div>
+        <div class="full">
+          <label for="evidencia">Evidencia / Link</label>
+          <input type="url" id="evidencia" placeholder="https://…">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="primary" id="btnGuardar">Guardar</button>
+      <button type="button" id="btnLimpiar">Limpiar compromiso</button>
+    </div>
+    <div id="msg" class="msg" role="status"></div>
+  </form>
+
+  <div class="card" style="margin-top:20px">
+    <h2>Guardados en esta sesión</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Hora</th><th>Responsable</th><th>Descripción</th><th>Estado</th></tr></thead>
+        <tbody id="historial"><tr><td colspan="4" class="empty">Aún no hay registros.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <datalist id="lista_personas">
+    <option>Josefa Aravena Figueroa</option>
+    <option>Benjamin Muñoz Soulat</option>
+    <option>Jose Francisco Alberto Campos Castro</option>
+    <option>Carolina Paz Mora Pizarro</option>
+    <option>Eduardo Alfonso Pincheira Diaz</option>
+    <option>Fabiola Del Pilar Arriagada Cares</option>
+    <option>Rodrigo Carreno Mora</option>
+    <option>Enzo Manuel Egidio Pettinelli Reyes</option>
+    <option>Eduardo Hunter Alarcon</option>
+    <option>Fabricio Juiliano Murillo Anziani</option>
+    <option>Jaime Daniel Figueroa Rebolledo</option>
+  </datalist>
+</main>
+
+<script>
+  // ===================== CONFIGURACIÓN =====================
+  // Pega aquí la "URL de HTTP POST" del disparador de Power Automate.
+  // Si se deja vacía, el formulario funciona en MODO PRUEBA: no envía nada
+  // y solo muestra el JSON que se enviaría.
+  const FLOW_URL = "";
+  // =========================================================
+
+  const CAMPOS = [
+    "planta", "area", "subgerencia", "practica_mgo", "tipo_registro",
+    "responsable", "descripcion", "solicitante", "fecha_solicitud",
+    "fecha_compromiso", "estado", "prioridad", "observacion",
+    "fecha_cierre", "evidencia"
+  ];
+  // Se borran después de cada Guardar; el resto se mantiene para la reunión.
+  const CAMPOS_COMPROMISO = [
+    "practica_mgo", "tipo_registro", "prioridad", "responsable", "solicitante",
+    "fecha_compromiso", "descripcion", "observacion", "fecha_cierre", "evidencia"
+  ];
+
+  const $ = id => document.getElementById(id);
+  const form = $("form"), msg = $("msg"), btn = $("btnGuardar");
+
+  $("fecha_solicitud").value = new Date().toLocaleDateString("sv-SE");
+
+  function mostrar(tipo, texto) {
+    msg.className = "msg " + tipo;
+    msg.textContent = texto;
+  }
+
+  function leerDatos() {
+    const datos = {};
+    for (const c of CAMPOS) {
+      const v = $(c).value.trim();
+      datos[c] = v === "" ? null : v;  // vacío -> null para que SharePoint deje la columna en blanco
+    }
+    return datos;
+  }
+
+  function validar() {
+    let ok = true;
+    for (const c of CAMPOS) {
+      const el = $(c);
+      const malo = !el.checkValidity();
+      el.classList.toggle("invalid", malo);
+      if (malo && ok) { el.focus(); ok = false; }
+    }
+    return ok;
+  }
+
+  function limpiarCompromiso() {
+    for (const c of CAMPOS_COMPROMISO) { $(c).value = ""; $(c).classList.remove("invalid"); }
+    $("estado").value = "Abierta";
+  }
+
+  function agregarHistorial(d) {
+    const tb = $("historial");
+    if (tb.querySelector(".empty")) tb.innerHTML = "";
+    const tr = document.createElement("tr");
+    for (const v of [new Date().toLocaleTimeString("es-CL"), d.responsable, d.descripcion, d.estado]) {
+      const td = document.createElement("td");
+      td.textContent = v ?? "";
+      tr.appendChild(td);
+    }
+    tb.prepend(tr);
+  }
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!validar()) { mostrar("err", "Completa los campos marcados en rojo."); return; }
+
+    const datos = leerDatos();
+
+    if (!FLOW_URL) {
+      mostrar("info", "MODO PRUEBA (falta FLOW_URL). Esto es lo que se enviaría:\n\n" +
+                      JSON.stringify(datos, null, 2));
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Guardando…";
+    try {
+      const r = await fetch(FLOW_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      });
+      if (!r.ok) throw new Error("El flujo respondió con estado " + r.status + ".\n" + await r.text());
+      agregarHistorial(datos);
+      limpiarCompromiso();
+      mostrar("ok", "Guardado. Se creó una fila nueva en la lista.");
+    } catch (err) {
+      mostrar("err", "No se pudo guardar.\n" + err.message +
+        "\n\nRevisa que la URL sea correcta, que el flujo esté activado " +
+        "y que la acción Respuesta tenga el encabezado Access-Control-Allow-Origin = *.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Guardar";
+    }
+  });
+
+  $("btnLimpiar").addEventListener("click", limpiarCompromiso);
+  form.addEventListener("input", e => e.target.classList.remove("invalid"));
+</script>
+</body>
+</html>

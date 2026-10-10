@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "planta":           { "type": ["string", "null"] },
+    "area":             { "type": ["string", "null"] },
+    "subgerencia":      { "type": ["string", "null"] },
+    "practica_mgo":     { "type": ["string", "null"] },
+    "tipo_registro":    { "type": ["string", "null"] },
+    "responsable":      { "type": ["string", "null"] },
+    "descripcion":      { "type": ["string", "null"] },
+    "solicitante":      { "type": ["string", "null"] },
+    "fecha_solicitud":  { "type": ["string", "null"] },
+    "fecha_compromiso": { "type": ["string", "null"] },
+    "estado":           { "type": ["string", "null"] },
+    "prioridad":        { "type": ["string", "null"] },
+    "observacion":      { "type": ["string", "null"] },
+    "fecha_cierre":     { "type": ["string", "null"] },
+    "evidencia":        { "type": ["string", "null"] }
+  }
+}
