@@ -130,8 +130,8 @@
         </div>
         <div class="field full" data-f="cod_sist_pgp">
           <label class="req" for="cod_sist_pgp">Sistema a comisionar</label>
-          <input id="cod_sist_pgp" list="dl_sist" placeholder="Escribe el código o el nombre…" autocomplete="off">
-          <datalist id="dl_sist"></datalist>
+          <select id="cod_sist_pgp"></select>
+          <div class="hint" id="hint_sist"></div>
         </div>
         <div class="field" data-f="PGP_com_tipo">
           <label class="req" for="PGP_com_tipo">Tipo de comisionamiento</label>
@@ -149,8 +149,8 @@
         </div>
         <div class="field full" data-f="Area">
           <label class="req" for="Area">Área</label>
-          <input id="Area" list="dl_areas" placeholder="Escribe para buscar…" autocomplete="off">
-          <datalist id="dl_areas"></datalist>
+          <select id="Area"></select>
+          <div class="hint" id="hint_area"></div>
         </div>
         <div class="field full" data-f="field_9">
           <label for="field_9">Nombre de la actividad o tarea</label>
@@ -409,12 +409,15 @@
   function refrescarListasPorPlanta() {
     const s = estado();
     const p = s.planta?.p ?? "";
-    llenarCombo("Area", CAT.areas.filter(a => a.p === p)
-      .map(a => ({ label: a.t.trim(), value: a.t })));
-    llenarSelect("cod_area_pgp", CAT.areasPgp.filter(a => a.p === p)
-      .map(a => [a.t, `${a.t} - ${a.c}`]));
-    llenarCombo("cod_sist_pgp", CAT.sistemas.filter(x => x.p === p)
-      .map(x => ({ label: `${x.c} - ${x.t}`, value: x.c })));
+    const areas = CAT.areas.filter(a => a.p === p);
+    llenarSelect("Area", areas.map(a => [a.t, a.t.trim()]));
+    $("hint_area").textContent = !p ? "Primero elige la planta." : areas.length ? "" : "No hay áreas cargadas para esta planta.";
+    const areasPgp = CAT.areasPgp.filter(a => a.p === p);
+    llenarSelect("cod_area_pgp", areasPgp.map(a => [a.t, `${a.t} - ${a.c}`]));
+    const sistemas = CAT.sistemas.filter(x => x.p === p);
+    llenarSelect("cod_sist_pgp", sistemas.map(x => [x.c, `${x.c} - ${x.t}`]));
+    $("hint_sist").textContent = !p ? "Primero elige la planta."
+      : sistemas.length ? `${sistemas.length} sistemas disponibles.` : "No hay sistemas cargados para esta planta en la lista Sistemas_PGP.";
     refrescarEquipos();
   }
 
@@ -575,7 +578,7 @@
       poner("Procesoaconfirmar", s.proc);
       if (visible("Ordendetrabajo")) poner("Ordendetrabajo", valorCombo("Ordendetrabajo"));
       if (visible("cod_area_pgp")) poner("cod_area_pgp", $("cod_area_pgp").value);
-      if (visible("cod_sist_pgp")) poner("cod_sist_pgp", valorCombo("cod_sist_pgp"));
+      if (visible("cod_sist_pgp")) poner("cod_sist_pgp", $("cod_sist_pgp").value);
       if (visible("PGP_com_tipo")) poner("PGP_com_tipo", $("PGP_com_tipo").value);
     }
     if (visible("field_9")) poner("field_9", $("field_9").value.trim());
@@ -583,7 +586,7 @@
 
     const buscar = { area: null, area_planta: null, empresa: null, lider_id: null };
     if (!s.pgp) {
-      buscar.area = valorCombo("Area");
+      buscar.area = $("Area").value;
       buscar.area_planta = s.planta.p;
       buscar.empresa = $("Empresa").value;
     }
