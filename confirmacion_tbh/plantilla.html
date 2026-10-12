@@ -99,7 +99,9 @@
       <div class="grid">
         <div class="field full" data-f="registrador">
           <label class="req" for="registrador">Nombre de quien realiza la confirmación</label>
-          <input id="registrador" autocomplete="name">
+          <input id="registrador" list="dl_registrador" placeholder="Escribe tu nombre para buscar…" autocomplete="off">
+          <datalist id="dl_registrador"></datalist>
+          <div class="hint">Se queda guardado en este computador para la próxima vez.</div>
         </div>
         <div class="field" data-f="Plantas">
           <label class="req" for="Plantas">Planta donde se realiza el contacto</label>
@@ -511,6 +513,9 @@
     llenarSelect("AccionCorrectivaID", CAT.accCor.map(a => [a.id, a.t]));
     llenarSelect("Tipohallazgo0falta", TIPOS_HALLAZGO_OL);
     llenarCombo("RespMedidaCorrectiva", CAT.lideres.map(l => ({ label: l.n, value: l.id })));
+    llenarCombo("registrador", CAT.lideres.map(l => ({ label: l.n, value: l.n })));
+    try { $("registrador").value = localStorage.getItem("tbh_registrador") || ""; } catch (e) {}
+    if (valorCombo("registrador") === null) $("registrador").value = "";
   }
 
   function refrescarRiesgos() {
@@ -559,7 +564,7 @@
   function armarDatos(esOM) {
     const s = estado();
     const item = {
-      VsApp: `${VERSION} | ${$("registrador").value.trim()}`,
+      VsApp: `${VERSION} | ${valorCombo("registrador")}`,
       PlantasId: s.planta.id,
       FechaCarga: $("FechaCarga").value + "T12:00:00Z",
       field_7: s.cond,
@@ -670,6 +675,7 @@
         body: JSON.stringify(datos)
       });
       if (!r.ok) throw new Error("El flujo respondió con estado " + r.status + ".\n" + await r.text());
+      try { localStorage.setItem("tbh_registrador", valorCombo("registrador")); } catch (e) {}
       nuevoRegistro();
       mensaje("msg1", "ok", "Enviado. El registro aparecerá en la lista en unos segundos. Puedes ingresar otra confirmación.");
     } catch (err) {
