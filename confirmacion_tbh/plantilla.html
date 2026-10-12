@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confirmación Trabajo Bien Hecho</title>
+<style>
+  :root {
+    --bg: #f0f0f0; --card: #ffffff; --text: #1d2733; --muted: #5d6b7a;
+    --border: #d5d0ca; --accent: #696158; --accent-text: #ffffff;
+    --ok-bg: #e5f4ea; --ok-text: #1f6f43; --err-bg: #fbe9e7; --err-text: #a3261a;
+    --info-bg: #eef1f5; --info-text: #2b3a47; --chip: #f6f4f1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12171c; --card: #1b232b; --text: #e6ebf0; --muted: #9aa7b4;
+      --border: #333d47; --accent: #b3a795; --accent-text: #15120e;
+      --ok-bg: #173323; --ok-text: #8fd6a9; --err-bg: #3a1c18; --err-text: #f2a79c;
+      --info-bg: #1d2834; --info-text: #c4d3e3; --chip: #222b34;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: .9rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+          padding: 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 1.05rem; margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 18px; }
+  .full { grid-column: 1 / -1; }
+  .field label, .field .lbl { display: block; font-size: .88rem; font-weight: 600; margin-bottom: 5px; }
+  .req::after { content: " *"; color: var(--err-text); }
+  input, select, textarea { width: 100%; padding: 8px 10px; font: inherit; color: var(--text);
+          background: var(--card); border: 1px solid var(--border); border-radius: 6px; }
+  textarea { min-height: 84px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .invalid { border-color: var(--err-text) !important; outline: 1px solid var(--err-text); }
+  .hidden { display: none !important; }
+  .q { padding: 12px 0; border-top: 1px solid var(--border); }
+  .q:first-child { border-top: 0; padding-top: 0; }
+  .q .lbl { font-weight: 500; }
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opts label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+                border: 1px solid var(--border); border-radius: 999px; cursor: pointer;
+                background: var(--chip); font-weight: 400; font-size: .9rem; margin: 0; }
+  .opts input { width: auto; margin: 0; }
+  .opts label:has(input:checked) { border-color: var(--accent); outline: 1px solid var(--accent); }
+  .opts.invalid { outline: 1px solid var(--err-text); border-radius: 8px; }
+  .checklist { display: grid; gap: 6px; max-height: 260px; overflow-y: auto; padding: 4px; }
+  .checklist label { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; font-size: .9rem; margin: 0; }
+  .checklist input { width: auto; margin-top: 3px; }
+  .hint { color: var(--muted); font-size: .8rem; margin-top: 4px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  button { font: inherit; font-weight: 600; padding: 10px 22px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: .6; cursor: wait; }
+  .msg { padding: 10px 12px; border-radius: 6px; margin-top: 12px; display: none; white-space: pre-wrap; }
+  .msg.ok { display: block; background: var(--ok-bg); color: var(--ok-text); }
+  .msg.err { display: block; background: var(--err-bg); color: var(--err-text); }
+  .msg.info { display: block; background: var(--info-bg); color: var(--info-text); }
+  .banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-weight: 600; }
+  .banner.ok { background: var(--ok-bg); color: var(--ok-text); }
+  .banner.om { background: var(--err-bg); color: var(--err-text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Confirmación de trabajo bien hecho</h1>
+  <p class="sub">Cada vez que presionas <b>Guardar</b> se crea un registro en la lista Contactos de Seguridad.</p>
+
+  <!-- ===================== PASO 1 ===================== -->
+  <section id="paso1">
+    <div class="card">
+      <h2>Datos generales</h2>
+      <div class="grid">
+        <div class="field full" data-f="registrador">
+          <label class="req" for="registrador">Nombre de quien realiza la confirmación</label>
+          <input id="registrador" autocomplete="name">
+        </div>
+        <div class="field" data-f="Plantas">
+          <label class="req" for="Plantas">Planta donde se realiza el contacto</label>
+          <select id="Plantas"></select>
+        </div>
+        <div class="field" data-f="FechaCarga">
+          <label class="req" for="FechaCarga">Fecha en que realizó la confirmación</label>
+          <input type="date" id="FechaCarga">
+        </div>
+        <div class="field full" data-f="field_7">
+          <label class="req" for="field_7">Condición de planta al realizar la confirmación</label>
+          <select id="field_7"></select>
+        </div>
+        <div class="field full" data-f="Procesoaconfirmar">
+          <label class="req" for="Procesoaconfirmar">Proceso a confirmar</label>
+          <select id="Procesoaconfirmar"></select>
+        </div>
+        <div class="field full" data-f="Ordendetrabajo">
+          <label for="Ordendetrabajo">Orden de trabajo</label>
+          <input id="Ordendetrabajo" list="dl_ot" placeholder="Escribe el número o la descripción…" autocomplete="off">
+          <datalist id="dl_ot"></datalist>
+        </div>
+        <div class="field full" data-f="cod_area_pgp">
+          <label class="req" for="cod_area_pgp">Área</label>
+          <select id="cod_area_pgp"></select>
+        </div>
+        <div class="field full" data-f="cod_sist_pgp">
+          <label class="req" for="cod_sist_pgp">Sistema a comisionar</label>
+          <input id="cod_sist_pgp" list="dl_sist" placeholder="Escribe el código o el nombre…" autocomplete="off">
+          <datalist id="dl_sist"></datalist>
+        </div>
+        <div class="field" data-f="PGP_com_tipo">
+          <label class="req" for="PGP_com_tipo">Tipo de comisionamiento</label>
+          <select id="PGP_com_tipo"></select>
+        </div>
+        <div class="field" data-f="Empresa">
+          <label class="req" for="Empresa">¿De qué empresa es el equipo ejecutor a confirmar?</label>
+          <select id="Empresa"></select>
+        </div>
+        <div class="field full" data-f="Equipo_x0020_seguro">
+          <label class="req" for="Equipo_x0020_seguro">Equipo ejecutor verificado</label>
+          <input id="Equipo_x0020_seguro" list="dl_equipos" placeholder="Escribe para buscar…" autocomplete="off">
+          <datalist id="dl_equipos"></datalist>
+          <div class="hint" id="hint_equipos"></div>
+        </div>
+        <div class="field full" data-f="Area">
+          <label class="req" for="Area">Área</label>
+          <input id="Area" list="dl_areas" placeholder="Escribe para buscar…" autocomplete="off">
+          <datalist id="dl_areas"></datalist>
+        </div>
+        <div class="field full" data-f="field_9">
+          <label for="field_9">Nombre de la actividad o tarea</label>
+          <input id="field_9">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card_preguntas">
+      <h2>Confirmación</h2>
+      <div id="preguntas"></div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" id="btnContinuar">Continuar</button>
+    </div>
+    <div id="msg1" class="msg" role="status"></div>
+  </section>
+
+  <!-- ===================== PASO 2: TRABAJO BIEN HECHO ===================== -->
+  <section id="paso_tbh" class="hidden">
+    <div class="banner ok">Trabajo bien hecho: todas las respuestas cumplen lo esperado.</div>
+    <div class="card">
+      <div class="field" data-f="tbh_field_17">
+        <label class="req" for="tbh_field_17">Retroalimentación y recomendaciones</label>
+        <textarea id="tbh_field_17"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PASO 2: OPORTUNIDAD DE MEJORA ===================== -->
+  <section id="paso_om" class="hidden">
+    <div class="banner om">Oportunidad de mejora: hay respuestas que no cumplen lo esperado.</div>
+    <div class="card">
+      <div class="grid">
+        <div class="field full" data-f="field_11">
+          <span class="lbl req">¿Fue necesario detener la actividad o tarea?</span>
+          <div class="opts" id="field_11"></div>
+        </div>
+        <div class="field full" data-f="Ambito_x0020_riesgo">
+          <span class="lbl req">Ámbito de riesgo</span>
+          <div class="checklist" id="Ambito_x0020_riesgo"></div>
+        </div>
+        <div class="field full" data-f="Riesgo_x0020_espec_x00ed_fico">
+          <span class="lbl req">Riesgo general</span>
+          <div class="checklist" id="Riesgo_x0020_espec_x00ed_fico"></div>
+          <div class="hint" id="hint_riesgos">Primero elige uno o más ámbitos.</div>
+        </div>
+        <div class="field full" data-f="MedidaInmediataID">
+          <label class="req" for="MedidaInmediataID">Acción inmediata</label>
+          <select id="MedidaInmediataID"></select>
+        </div>
+        <div class="field full" data-f="Acci_x00f3_ninmediata">
+          <label class="req" for="Acci_x00f3_ninmediata">Detalle acción inmediata</label>
+          <input id="Acci_x00f3_ninmediata">
+        </div>
+        <div class="field full" data-f="ConfirmarCorrectiva">
+          <span class="lbl req">¿Desea implementar una acción de mejora?</span>
+          <div class="opts" id="ConfirmarCorrectiva"></div>
+        </div>
+        <div class="field full" data-f="AccionCorrectivaID">
+          <label class="req" for="AccionCorrectivaID">Acción de mejora (no inmediata)</label>
+          <select id="AccionCorrectivaID"></select>
+        </div>
+        <div class="field full" data-f="Medidacorrectiva">
+          <label class="req" for="Medidacorrectiva">Detalle acción de mejora (no inmediata)</label>
+          <textarea id="Medidacorrectiva"></textarea>
+        </div>
+        <div class="field" data-f="RespMedidaCorrectiva">
+          <label class="req" for="RespMedidaCorrectiva">Responsable de implementar</label>
+          <input id="RespMedidaCorrectiva" list="dl_lideres" placeholder="Escribe para buscar…" autocomplete="off">
+          <datalist id="dl_lideres"></datalist>
+        </div>
+        <div class="field" data-f="Fechacompromiso">
+          <label class="req" for="Fechacompromiso">Plazo de implementación</label>
+          <input type="date" id="Fechacompromiso">
+        </div>
+        <div class="field full" data-f="om_field_17">
+          <label class="req" for="om_field_17">Retroalimentación</label>
+          <textarea id="om_field_17"></textarea>
+        </div>
+        <div class="field full" data-f="Hallazgo0falta">
+          <span class="lbl req">¿Existe hallazgo de Orden y Limpieza?</span>
+          <div class="opts" id="Hallazgo0falta"></div>
+        </div>
+        <div class="field" data-f="Tipohallazgo0falta">
+          <label class="req" for="Tipohallazgo0falta">Tipo de hallazgo de Orden y Limpieza</label>
+          <select id="Tipohallazgo0falta"></select>
+        </div>
+        <div class="field" data-f="Otrotipohallazgo0falta">
+          <label class="req" for="Otrotipohallazgo0falta">Detalle</label>
+          <input id="Otrotipohallazgo0falta">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="paso2_acciones" class="hidden">
+    <div class="actions">
+      <button type="button" id="btnVolver">Volver</button>
+      <button type="button" class="primary" id="btnGuardar">Guardar</button>
+    </div>
+    <div id="msg2" class="msg" role="status"></div>
+  </section>
+</main>
+
+<script>
+  // ===================== CONFIGURACIÓN =====================
+  // URL del disparador "Cuando se recibe una solicitud de webhook de Teams".
+  // Vacía = MODO PRUEBA: no envía nada y muestra los datos que se enviarían.
+  const FLOW_URL = "";
+  const VERSION = "HTML 1.0";
+  // =========================================================
+
+  // Catálogos exportados de SharePoint (los genera build_catalogos.py).
+  const CAT = /*__CATALOGOS__*/{};
+
+  const PGP_PROC = {
+    OT: "Trabajo PGP (OT)",
+    DET: "Actividades Detención/Partida",
+    COM: "Comisionamiento",
+    OTRA: "Otra actividad"
+  };
+  const CONDICIONES = ["Operación Normal", "Parada de área", "PGP", "PGP - Robustez L3", "PCP",
+                       "Campaña de confirmación focalizada"];
+
+  // Preguntas cuando la condición NO es PGP. Cualquier "No" lleva a Oportunidad de mejora.
+  const OPC_NORMAL = [["Sí", "Sí"], ["No", "No"], ["No evaluada", "No evaluada / No aplica"]];
+  const PREGUNTAS_NORMALES = [
+    ["RealPlan", "¿El equipo de trabajo realizó una planificación de la actividad?"],
+    ["ConTarea", "¿El equipo de trabajo conoce la tarea y el impacto en el proceso? ¿Está mapeado? (Pedir verlo)"],
+    ["ConRiesgo", "¿El equipo de trabajo conoce los riesgos de la tarea? (preguntar cuáles son)"],
+    ["ConControles", "¿El equipo de trabajo conoce los controles de la tarea? (preguntar cuáles son)"],
+    ["CuentaDocum", "¿El equipo de trabajo cuenta con la documentación definida para la ejecución de la tarea? (Pedir verlo)"],
+    ["CuentaRecursos", "¿El equipo de trabajo cuenta con los recursos y herramientas necesarias?"],
+    ["EjecDocument", "¿El equipo de trabajo ejecuta la tarea según lo señalado en la documentación definida?"],
+    ["RegDocument", "¿El equipo de trabajo deja registro documentado de la actividad realizada? (Pedir verlo)"],
+    ["ImplControl", "¿Los controles definidos están correctamente implementados?"],
+    ["PruebaEfect", "¿El equipo de trabajo hace las pruebas o verificaciones para asegurar efectividad y calidad de la tarea realizada?"],
+    ["MantLimpio", "¿El equipo de trabajo se preocupa de mantener y dejar el área limpia y en condiciones seguras?"],
+    ["Replan", "En caso de que las condiciones de trabajo cambien, ¿el equipo sabe que debe y ha procedido a detener el trabajo para replanificar la actividad cumpliendo con todas las fases de planificación?"]
+  ].map(([k, t]) => ({ k, t, opts: OPC_NORMAL, malas: ["No"], ver: s => !s.pgp }));
+
+  // Preguntas PGP. "ver" indica en qué proceso aparecen; "malas" las respuestas que llevan a Oportunidad de mejora.
+  const SN = [["Sí", "Sí"], ["No", "No"]];
+  const SPN = [["Sí", "Sí"], ["Parcialmente", "Parcialmente"], ["No", "No"]];
+  const PREGUNTAS_PGP = [
+    { k: "PGPpauta", t: "¿El trabajo cuenta con pauta de trabajo en terreno?",
+      opts: [["Sí", "Sí"], ["No, se debe imprimir o elaborar pauta", "No, se debe imprimir o elaborar pauta"]],
+      malas: ["No, se debe imprimir o elaborar pauta"], ver: s => s.pgp && s.proc === PGP_PROC.OT },
+    { k: "PGPdp_con_procedieminto", t: "¿El equipo conoce el procedimiento asociado y lo está utilizando?",
+      opts: SN, malas: ["No"], ver: s => s.pgp },
+    { k: "PGPptc", t: "¿El trabajo cuenta con PTC en terreno (sólo en los casos que aplique), correctamente completados y firmados?",
+      opts: [["Sí", "Sí"], ["No", "No"], ["No aplica", "No aplica"]], malas: [], ver: s => s.pgp },
+    { k: "PGPabcptc", t: "¿El trabajo cuenta con ABC en terreno correctamente completados y firmados?",
+      opts: SPN, malas: ["No", "Parcialmente"], ver: s => s.pgp },
+    { k: "PGPrecursos", t: "¿El equipo tiene los recursos, herramientas y repuestos necesarios para ejecutar el trabajo?",
+      opts: SPN, malas: ["No", "Parcialmente"], ver: s => s.pgp },
+    { k: "PGP_com_checklist", t: "¿El equipo conoce y está utilizando el checklist de comisionamiento que corresponde?",
+      opts: SN, malas: ["No"], ver: s => s.pgp && s.proc === PGP_PROC.COM },
+    { k: "PGP_com_pruebas", t: "¿Las pruebas/protocolos del comisionamiento están registrados y firmados?",
+      opts: SN, malas: ["No"], ver: s => s.pgp && s.proc === PGP_PROC.COM },
+    { k: "PGPriesgos", t: "¿El equipo conoce los riesgos de la tarea y los controles definidos están correctamente implementados?",
+      opts: SPN, malas: ["No", "Parcialmente"], ver: s => s.pgp },
+    { k: "PGP_com_hall", t: "¿Los hallazgos de comisionamiento están siendo correctamente registrados y gestionados?",
+      opts: SN, malas: ["No"], ver: s => s.pgp && s.proc === PGP_PROC.COM },
+    { k: "PGP_bloqueo_detencion", t: "¿Se bloquearon todas las energías involucradas, se verificó energía cero y se realizó el bloqueo personal de quienes van a intervenir?",
+      opts: SN, malas: ["No"], ver: s => s.pgp && s.proc === PGP_PROC.DET },
+    { k: "PGP_bloqueo_partida1", t: "Antes de probar ¿Se verificó que todos los sistemas asociados a la prueba fueron entregados, que el Tag del equipo es el correcto, y que las protecciones están debidamente instaladas?",
+      opts: SN, malas: ["No"], ver: s => s.pgp && (s.proc === PGP_PROC.COM || s.proc === PGP_PROC.DET) },
+    { k: "PGP_bloqueo_partida2", t: "Antes de probar ¿Se verificó que no existen personas expuestas ni trabajos simultáneos sobre el equipo o áreas colindantes?",
+      opts: SN, malas: ["No"], ver: s => s.pgp && (s.proc === PGP_PROC.COM || s.proc === PGP_PROC.DET) },
+    { k: "PGPproductiv", t: "¿Existe personal sin desarrollar actividades en la tarea confirmada? (preguntar por qué)",
+      opts: [["No", "No"], ["Sí", "Sí"]], malas: ["Sí"], ver: s => s.pgp },
+    { k: "PGPlimpieza", t: "¿El equipo de trabajo se preocupa de mantener y dejar el área limpia y en condiciones seguras?",
+      opts: SPN, malas: ["No", "Parcialmente"], ver: s => s.pgp },
+    { k: "PGP_otra_cond", t: "¿La actividad se ejecuta en condiciones seguras?",
+      opts: SN, malas: ["No"], ver: s => s.pgp && s.proc === PGP_PROC.OTRA }
+  ];
+  const PREG_OTRO_HALLAZGO = { k: "OtroHallazgo", t: "¿Se identificó algún otro hallazgo?",
+                               opts: SN, malas: ["Sí"], ver: () => true };
+  const PREGUNTAS = [...PREGUNTAS_NORMALES, ...PREGUNTAS_PGP, PREG_OTRO_HALLAZGO];
+
+  const TIPOS_HALLAZGO_OL = ["Orden y limpieza", "Derrame de líquidos", "Acumulación de residuos",
+    "Material fuera de lugar", "Obstrucción de vías de evacuación", "Herramientas mal almacenada",
+    "Residuos peligrosos mal gestionados", "Condición subestándar asociada", "Otros"];
+  const ID_ACCION_INMEDIATA_OTRO = 7;
+
+  // ---------------------------------------------------------------- utilidades
+  const $ = id => document.getElementById(id);
+  const hoy = () => new Date().toLocaleDateString("sv-SE");
+
+  function llenarSelect(id, opciones, placeholder = "Seleccionar…") {
+    const sel = $(id);
+    sel.innerHTML = "";
+    sel.append(new Option(placeholder, ""));
+    for (const o of opciones) {
+      const [valor, texto] = Array.isArray(o) ? o : [o, o];
+      sel.append(new Option(texto, valor));
+    }
+  }
+
+  // Campo con búsqueda (input + datalist). Guarda el valor real asociado al texto elegido.
+  const combos = {};
+  function llenarCombo(id, opciones) {   // opciones: [{label, value}]
+    const dl = $(id).list;
+    dl.innerHTML = "";
+    const mapa = new Map();
+    for (const o of opciones) {
+      mapa.set(o.label, o.value);
+      const op = document.createElement("option");
+      op.value = o.label;
+      dl.append(op);
+    }
+    combos[id] = mapa;
+    if (!mapa.has($(id).value)) $(id).value = "";
+  }
+  const valorCombo = id => combos[id]?.get($(id).value.trim()) ?? null;
+
+  function radios(id, opciones) {
+    const cont = $(id);
+    cont.innerHTML = "";
+    for (const [valor, texto] of opciones) {
+      const l = document.createElement("label");
+      const r = document.createElement("input");
+      r.type = "radio"; r.name = id; r.value = valor;
+      l.append(r, document.createTextNode(texto));
+      cont.append(l);
+    }
+  }
+  const valorRadio = name => document.querySelector(`input[name="${CSS.escape(name)}"]:checked`)?.value ?? "";
+  const limpiarRadio = name => document.querySelectorAll(`input[name="${CSS.escape(name)}"]`).forEach(r => r.checked = false);
+
+  const mostrar = (dataF, si) => document.querySelector(`[data-f="${dataF}"]`).classList.toggle("hidden", !si);
+  const visible = dataF => !document.querySelector(`[data-f="${dataF}"]`).classList.contains("hidden");
+
+  function mensaje(id, tipo, texto) {
+    $(id).className = "msg " + tipo;
+    $(id).textContent = texto;
+  }
+
+  // ---------------------------------------------------------------- estado
+  function estado() {
+    const cond = $("field_7").value;
+    const pgp = cond.includes("PGP");
+    return { cond, pgp, proc: pgp ? $("Procesoaconfirmar").value : "",
+             planta: CAT.plantas.find(p => String(p.id) === $("Plantas").value) || null };
+  }
+
+  // ---------------------------------------------------------------- catálogos dependientes
+  function refrescarListasPorPlanta() {
+    const s = estado();
+    const p = s.planta?.p ?? "";
+    llenarCombo("Area", CAT.areas.filter(a => a.p === p)
+      .map(a => ({ label: a.t.trim(), value: a.t })));
+    llenarSelect("cod_area_pgp", CAT.areasPgp.filter(a => a.p === p)
+      .map(a => [a.t, `${a.t} - ${a.c}`]));
+    llenarCombo("cod_sist_pgp", CAT.sistemas.filter(x => x.p === p)
+      .map(x => ({ label: `${x.c} - ${x.t}`, value: x.c })));
+    refrescarEquipos();
+  }
+
+  function refrescarEquipos() {
+    const s = estado();
+    const p = s.planta?.p ?? "";
+    const emp = $("Empresa").value;
+    let lista;
+    if (s.pgp) lista = CAT.equipos.filter(e => e.t && e.p && (e.e === "EESS SPOT" || e.p === p));
+    else if (emp === "EESS SPOT") lista = CAT.equipos.filter(e => e.e === "EESS SPOT");
+    else lista = CAT.equipos.filter(e => e.p === p && e.e === emp);
+    llenarCombo("Equipo_x0020_seguro", lista.map(e => ({ label: `${e.t.trim()} - ${e.e}`, value: e.id })));
+    $("hint_equipos").textContent = !p ? "Primero elige la planta."
+      : (!s.pgp && !emp) ? "Primero elige la empresa." : `${lista.length} equipos disponibles.`;
+  }
+
+  // ---------------------------------------------------------------- visibilidad paso 1
+  function actualizarPaso1() {
+    const s = estado();
+    mostrar("Procesoaconfirmar", s.pgp);
+    mostrar("Ordendetrabajo", s.pgp && s.proc === PGP_PROC.OT);
+    mostrar("cod_area_pgp", s.pgp && (s.proc === PGP_PROC.DET || s.proc === PGP_PROC.OTRA));
+    mostrar("cod_sist_pgp", s.pgp && s.proc === PGP_PROC.COM);
+    mostrar("PGP_com_tipo", s.pgp && s.proc === PGP_PROC.COM);
+    mostrar("field_9", !s.pgp || s.proc === PGP_PROC.DET || s.proc === PGP_PROC.OTRA);
+    $("field_9").previousElementSibling.classList.toggle("req", !s.pgp);
+    mostrar("Empresa", !s.pgp);
+    mostrar("Area", !s.pgp);
+    for (const q of PREGUNTAS) mostrar("q_" + q.k, q.ver(s));
+    $("card_preguntas").classList.toggle("hidden", !s.cond);
+  }
+
+  function crearPreguntas() {
+    const cont = $("preguntas");
+    for (const q of PREGUNTAS) {
+      const div = document.createElement("div");
+      div.className = "q field";
+      div.dataset.f = "q_" + q.k;
+      const lbl = document.createElement("span");
+      lbl.className = "lbl" + (q.k === "OtroHallazgo" ? " req" : "");
+      lbl.textContent = q.t;
+      const opts = document.createElement("div");
+      opts.className = "opts";
+      opts.id = q.k;
+      div.append(lbl, opts);
+      cont.append(div);
+      radios(q.k, q.opts);
+    }
+  }
+
+  // ---------------------------------------------------------------- validación
+  function marcar(el, malo) { el.classList.toggle("invalid", malo); return !malo; }
+
+  function validarPaso1() {
+    const s = estado();
+    let ok = true;
+    const req = (id, cond = true) => {
+      if (!visible(id) || !cond) return;
+      const el = $(id);
+      const vacio = el.list ? valorCombo(id) === null : !el.value.trim();
+      ok = marcar(el, vacio) && ok;
+    };
+    req("registrador"); req("Plantas"); req("FechaCarga"); req("field_7");
+    req("Procesoaconfirmar"); req("cod_area_pgp"); req("cod_sist_pgp"); req("PGP_com_tipo");
+    req("field_9", !s.pgp); req("Empresa"); req("Equipo_x0020_seguro"); req("Area");
+    if (visible("Ordendetrabajo") && $("Ordendetrabajo").value.trim())
+      ok = marcar($("Ordendetrabajo"), valorCombo("Ordendetrabajo") === null) && ok;
+    ok = marcar($("OtroHallazgo"), !valorRadio("OtroHallazgo")) && ok;
+    if (!ok) return "Completa los campos marcados en rojo.";
+    if ($("FechaCarga").value > hoy()) {
+      marcar($("FechaCarga"), true);
+      return "La fecha de confirmación no puede ser mayor a hoy.";
+    }
+    return null;
+  }
+
+  function hayOportunidadMejora() {
+    const s = estado();
+    return PREGUNTAS.some(q => q.ver(s) && q.malas.includes(valorRadio(q.k)));
+  }
+
+  // ---------------------------------------------------------------- paso 2: oportunidad de mejora
+  function prepararOM() {
+    radios("field_11", [["Si", "Sí"], ["No", "No"]]);
+    radios("ConfirmarCorrectiva", [["Sí", "Sí"], ["No", "No"]]);
+    radios("Hallazgo0falta", [["true", "Sí"], ["false", "No"]]);
+    const amb = $("Ambito_x0020_riesgo");
+    for (const a of CAT.ambitos) {
+      const l = document.createElement("label");
+      const c = document.createElement("input");
+      c.type = "checkbox"; c.value = a.id; c.dataset.t = a.t;
+      l.append(c, document.createTextNode(a.t));
+      amb.append(l);
+    }
+    llenarSelect("MedidaInmediataID", CAT.accInm.map(a => [a.id, a.t]));
+    llenarSelect("AccionCorrectivaID", CAT.accCor.map(a => [a.id, a.t]));
+    llenarSelect("Tipohallazgo0falta", TIPOS_HALLAZGO_OL);
+    llenarCombo("RespMedidaCorrectiva", CAT.lideres.map(l => ({ label: l.n, value: l.id })));
+  }
+
+  function refrescarRiesgos() {
+    const marcadosAntes = new Set([...$("Riesgo_x0020_espec_x00ed_fico").querySelectorAll("input:checked")].map(c => c.value));
+    const ambitos = new Set([...$("Ambito_x0020_riesgo").querySelectorAll("input:checked")].map(c => c.dataset.t));
+    const cont = $("Riesgo_x0020_espec_x00ed_fico");
+    cont.innerHTML = "";
+    for (const e of CAT.eventos.filter(e => ambitos.has(e.a))) {
+      const l = document.createElement("label");
+      const c = document.createElement("input");
+      c.type = "checkbox"; c.value = e.t; c.checked = marcadosAntes.has(e.t);
+      l.append(c, document.createTextNode(e.t.trim()));
+      cont.append(l);
+    }
+    $("hint_riesgos").classList.toggle("hidden", ambitos.size > 0);
+  }
+
+  function actualizarOM() {
+    mostrar("Acci_x00f3_ninmediata", Number($("MedidaInmediataID").value) === ID_ACCION_INMEDIATA_OTRO);
+    const corr = valorRadio("ConfirmarCorrectiva") === "Sí";
+    for (const f of ["AccionCorrectivaID", "Medidacorrectiva", "RespMedidaCorrectiva", "Fechacompromiso"]) mostrar(f, corr);
+    const hall = valorRadio("Hallazgo0falta") === "true";
+    mostrar("Tipohallazgo0falta", hall);
+    mostrar("Otrotipohallazgo0falta", hall && $("Tipohallazgo0falta").value === "Otros");
+  }
+
+  function validarOM() {
+    let ok = true;
+    const req = id => {
+      if (!visible(id)) return;
+      const el = $(id);
+      ok = marcar(el, el.list ? valorCombo(id) === null : !el.value.trim()) && ok;
+    };
+    for (const r of ["field_11", "ConfirmarCorrectiva", "Hallazgo0falta"]) ok = marcar($(r), !valorRadio(r)) && ok;
+    for (const c of ["Ambito_x0020_riesgo", "Riesgo_x0020_espec_x00ed_fico"])
+      ok = marcar($(c), !$(c).querySelector("input:checked")) && ok;
+    ["MedidaInmediataID", "Acci_x00f3_ninmediata", "AccionCorrectivaID", "Medidacorrectiva",
+     "RespMedidaCorrectiva", "Fechacompromiso", "om_field_17", "Tipohallazgo0falta",
+     "Otrotipohallazgo0falta"].forEach(req);
+    return ok ? null : "Completa los campos marcados en rojo.";
+  }
+
+  // ---------------------------------------------------------------- armar datos para el flujo
+  // "item" usa los nombres internos de SharePoint; el flujo lo envía tal cual a la lista.
+  // "buscar" son los valores cuyo ID busca el flujo antes de crear el registro.
+  function armarDatos(esOM) {
+    const s = estado();
+    const item = {
+      VsApp: `${VERSION} | ${$("registrador").value.trim()}`,
+      PlantasId: s.planta.id,
+      FechaCarga: $("FechaCarga").value + "T12:00:00Z",
+      field_7: s.cond,
+      Equipo_x0020_seguroId: valorCombo("Equipo_x0020_seguro")
+    };
+    const poner = (k, v) => { if (v !== null && v !== undefined && v !== "") item[k] = v; };
+    if (s.pgp) {
+      poner("Procesoaconfirmar", s.proc);
+      if (visible("Ordendetrabajo")) poner("Ordendetrabajo", valorCombo("Ordendetrabajo"));
+      if (visible("cod_area_pgp")) poner("cod_area_pgp", $("cod_area_pgp").value);
+      if (visible("cod_sist_pgp")) poner("cod_sist_pgp", valorCombo("cod_sist_pgp"));
+      if (visible("PGP_com_tipo")) poner("PGP_com_tipo", $("PGP_com_tipo").value);
+    }
+    if (visible("field_9")) poner("field_9", $("field_9").value.trim());
+    for (const q of PREGUNTAS) if (q.ver(s)) poner(q.k, valorRadio(q.k));
+
+    const buscar = { area: null, area_planta: null, empresa: null, lider_id: null };
+    if (!s.pgp) {
+      buscar.area = valorCombo("Area");
+      buscar.area_planta = s.planta.p;
+      buscar.empresa = $("Empresa").value;
+    }
+
+    if (!esOM) {
+      poner("field_17", $("tbh_field_17").value.trim());
+    } else {
+      poner("field_11", valorRadio("field_11"));
+      item.Ambito_x0020_riesgoId = [...$("Ambito_x0020_riesgo").querySelectorAll("input:checked")].map(c => Number(c.value));
+      item.Riesgo_x0020_espec_x00ed_fico = [...$("Riesgo_x0020_espec_x00ed_fico").querySelectorAll("input:checked")].map(c => c.value);
+      poner("MedidaInmediataID", Number($("MedidaInmediataID").value));
+      if (visible("Acci_x00f3_ninmediata")) poner("Acci_x00f3_ninmediata", $("Acci_x00f3_ninmediata").value.trim());
+      poner("ConfirmarCorrectiva", valorRadio("ConfirmarCorrectiva"));
+      if (valorRadio("ConfirmarCorrectiva") === "Sí") {
+        poner("AccionCorrectivaID", Number($("AccionCorrectivaID").value));
+        poner("Medidacorrectiva", $("Medidacorrectiva").value.trim());
+        poner("Fechacompromiso", $("Fechacompromiso").value + "T12:00:00Z");
+        buscar.lider_id = valorCombo("RespMedidaCorrectiva");
+      }
+      poner("field_17", $("om_field_17").value.trim());
+      item.Hallazgo0falta = valorRadio("Hallazgo0falta") === "true";
+      if (item.Hallazgo0falta) {
+        poner("Tipohallazgo0falta", $("Tipohallazgo0falta").value);
+        if (visible("Otrotipohallazgo0falta")) poner("Otrotipohallazgo0falta", $("Otrotipohallazgo0falta").value.trim());
+      }
+    }
+    return { buscar, item };
+  }
+
+  // ---------------------------------------------------------------- navegación
+  let esOM = false;
+
+  function irPaso2() {
+    const error = validarPaso1();
+    if (error) { mensaje("msg1", "err", error); return; }
+    $("msg1").className = "msg";
+    esOM = hayOportunidadMejora();
+    $("paso1").classList.add("hidden");
+    $("paso_tbh").classList.toggle("hidden", esOM);
+    $("paso_om").classList.toggle("hidden", !esOM);
+    $("paso2_acciones").classList.remove("hidden");
+    $("msg2").className = "msg";
+    if (esOM) actualizarOM();
+    window.scrollTo(0, 0);
+  }
+
+  function volverPaso1() {
+    $("paso1").classList.remove("hidden");
+    for (const id of ["paso_tbh", "paso_om", "paso2_acciones"]) $(id).classList.add("hidden");
+    window.scrollTo(0, 0);
+  }
+
+  function nuevoRegistro() {
+    // Mantiene quién registra, la planta y la fecha para ingresar otra confirmación seguida.
+    for (const id of ["field_7", "Procesoaconfirmar", "Ordendetrabajo", "cod_area_pgp", "cod_sist_pgp",
+                      "PGP_com_tipo", "Empresa", "Equipo_x0020_seguro", "Area", "field_9",
+                      "tbh_field_17", "MedidaInmediataID", "Acci_x00f3_ninmediata", "AccionCorrectivaID",
+                      "Medidacorrectiva", "RespMedidaCorrectiva", "Fechacompromiso", "om_field_17",
+                      "Tipohallazgo0falta", "Otrotipohallazgo0falta"]) $(id).value = "";
+    for (const q of PREGUNTAS) limpiarRadio(q.k);
+    for (const r of ["field_11", "ConfirmarCorrectiva", "Hallazgo0falta"]) limpiarRadio(r);
+    document.querySelectorAll("#Ambito_x0020_riesgo input").forEach(c => c.checked = false);
+    refrescarRiesgos();
+    document.querySelectorAll(".invalid").forEach(e => e.classList.remove("invalid"));
+    refrescarEquipos();
+    actualizarPaso1();
+    volverPaso1();
+  }
+
+  async function guardar() {
+    const error = esOM ? validarOM() : (() => {
+      const ok = marcar($("tbh_field_17"), !$("tbh_field_17").value.trim());
+      return ok ? null : "Completa los campos marcados en rojo.";
+    })();
+    if (error) { mensaje("msg2", "err", error); return; }
+
+    const datos = armarDatos(esOM);
+    if (!FLOW_URL) {
+      mensaje("msg2", "info", "MODO PRUEBA (falta FLOW_URL). Esto es lo que se enviaría:\n\n" +
+                              JSON.stringify(datos, null, 2));
+      return;
+    }
+    const btn = $("btnGuardar");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    try {
+      const r = await fetch(FLOW_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      });
+      if (!r.ok) throw new Error("El flujo respondió con estado " + r.status + ".\n" + await r.text());
+      nuevoRegistro();
+      mensaje("msg1", "ok", "Enviado. El registro aparecerá en la lista en unos segundos. Puedes ingresar otra confirmación.");
+    } catch (err) {
+      mensaje("msg2", "err", "No se pudo enviar.\n" + err.message +
+        "\n\nRevisa que la URL sea correcta y que el flujo esté activado.");
+    } finally {
+      btn.disabled = false; btn.textContent = "Guardar";
+    }
+  }
+
+  // ---------------------------------------------------------------- inicio
+  function iniciar() {
+    llenarSelect("Plantas", CAT.plantas.map(p => [p.id, p.t]));
+    llenarSelect("field_7", CONDICIONES);
+    llenarSelect("Procesoaconfirmar", Object.values(PGP_PROC));
+    llenarSelect("PGP_com_tipo", ["Estático", "Dinámico"]);
+    llenarSelect("Empresa", CAT.empresas);
+    llenarCombo("Ordendetrabajo", CAT.ot.map(o => ({ label: `${o.t} - ${o.x}`, value: o.t })));
+    $("FechaCarga").value = hoy();
+    $("FechaCarga").max = hoy();
+    crearPreguntas();
+    prepararOM();
+    refrescarListasPorPlanta();
+    actualizarPaso1();
+
+    $("Plantas").addEventListener("change", refrescarListasPorPlanta);
+    $("field_7").addEventListener("change", () => {
+      $("Procesoaconfirmar").value = "";
+      for (const q of PREGUNTAS_PGP) limpiarRadio(q.k);
+      refrescarEquipos();
+      actualizarPaso1();
+    });
+    $("Procesoaconfirmar").addEventListener("change", () => {
+      for (const q of PREGUNTAS_PGP) limpiarRadio(q.k);
+      actualizarPaso1();
+    });
+    $("Empresa").addEventListener("change", refrescarEquipos);
+    $("Ambito_x0020_riesgo").addEventListener("change", refrescarRiesgos);
+    $("paso_om").addEventListener("change", actualizarOM);
+    document.addEventListener("input", e => e.target.classList?.remove("invalid"));
+    document.addEventListener("change", e => e.target.closest(".invalid")?.classList.remove("invalid"));
+    $("btnContinuar").addEventListener("click", irPaso2);
+    $("btnVolver").addEventListener("click", volverPaso1);
+    $("btnGuardar").addEventListener("click", guardar);
+  }
+  iniciar();
+</script>
+</body>
+</html>
