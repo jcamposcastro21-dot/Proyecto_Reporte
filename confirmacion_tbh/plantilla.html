@@ -329,7 +329,7 @@
     { k: "PGP_bloqueo_partida2", t: "Antes de probar ¿Se verificó que no existen personas expuestas ni trabajos simultáneos sobre el equipo o áreas colindantes?",
       opts: SN, malas: ["No"], ver: s => s.pgp && (s.proc === PGP_PROC.COM || s.proc === PGP_PROC.DET) },
     { k: "PGPproductiv", t: "¿Existe personal sin desarrollar actividades en la tarea confirmada? (preguntar por qué)",
-      opts: [["No", "No"], ["Sí", "Sí"]], malas: ["Sí"], ver: s => s.pgp },
+      opts: SN, malas: ["Sí"], ver: s => s.pgp },
     { k: "PGPlimpieza", t: "¿El equipo de trabajo se preocupa de mantener y dejar el área limpia y en condiciones seguras?",
       opts: SPN, malas: ["No", "Parcialmente"], ver: s => s.pgp },
     { k: "PGP_otra_cond", t: "¿La actividad se ejecuta en condiciones seguras?",
